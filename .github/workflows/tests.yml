@@ -1,0 +1,28 @@
+name: Tests
+
+on:
+  push:
+    branches-ignore:
+      - main
+  pull_request:
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Installer les dépendances système
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y python3-tk fonts-liberation
+
+      - name: Installer les dépendances Python
+        run: pip install fpdf2 tkcalendar pytest
+
+      - name: Lancer les tests
+        run: pytest tests/ -v

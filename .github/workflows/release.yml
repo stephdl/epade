@@ -1,0 +1,43 @@
+name: Release (tag sémantique)
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+jobs:
+  release-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Installer les dépendances
+        run: pip install pyinstaller fpdf2 tkcalendar
+
+      - name: Construire l'exe
+        run: |
+          pyinstaller --onefile --windowed --name EPADE `
+            --add-data "assets/fonts;assets/fonts" `
+            main.py
+
+      - name: Créer la release GitHub
+        uses: softprops/action-gh-release@v2
+        with:
+          name: "ÉPADE ${{ github.ref_name }}"
+          body: |
+            ## ÉPADE ${{ github.ref_name }}
+
+            ### Installation Windows
+            1. Télécharger `EPADE.exe`
+            2. Double-cliquer pour lancer — aucune installation requise
+            3. La base de données `data/epade.db` est créée automatiquement à côté de l'exe
+
+            ### Installation Linux
+            Voir [README.md](https://github.com/${{ github.repository }}/blob/main/README.md)
+          files: dist/EPADE.exe
+          draft: false
+          prerelease: false

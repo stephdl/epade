@@ -1,0 +1,23 @@
+# Base de données (données patients — ne jamais committer)
+data/
+*.db
+
+# PyInstaller
+dist/
+build/
+*.spec
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.pytest_cache/
+
+# PDF générés localement
+*.pdf
+
+# Éditeurs
+.vscode/
+.idea/
+*.swp
+*~

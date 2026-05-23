@@ -1,0 +1,437 @@
+import tkinter as tk
+from tkinter import ttk, messagebox
+from gui.datepicker import LargeDateEntry
+import db
+
+SCORE_LABELS = ["— Non renseigné —", "0 — Absent", "1 — Léger",
+                "2 — Moyen", "3 — Fort", "4 — Très fort"]
+
+SECTION_BG = {"A": "#fff0f0", "B": "#f0f4ff", "C": "#f0fff4", "D": "#fffdf0"}
+
+AUTRE_MARKER = "Autre (champ libre)"
+
+# Alias pour repérer les "Autre..." dans les listes
+def _is_autre(val):
+    return val and "champ libre" in val.lower()
+
+
+def _score_from_label(label):
+    if not label or label == SCORE_LABELS[0]:
+        return None
+    return int(label[0])
+
+
+def _label_from_score(score):
+    return SCORE_LABELS[0] if score is None else SCORE_LABELS[score + 1]
+
+
+def _match_option(value, options):
+    """Retourne la valeur si elle est dans la liste, sinon None."""
+    return value if value in options else None
+
+
+class _DropdownLibre(ttk.Frame):
+    """Combobox + Entry pour champ libre (visible si 'Autre...' sélectionné)."""
+
+    def __init__(self, parent, choices, state="readonly", on_change=None, **kw):
+        super().__init__(parent, **kw)
+        self._choices = choices  # NB: ne pas nommer _options — collision avec ttk interne
+        self._on_change = on_change
+
+        self._var = tk.StringVar()
+        self._cb = ttk.Combobox(self, textvariable=self._var, values=choices,
+                                state=state, width=42)
+        self._cb.pack(side=tk.LEFT)
+
+        self._libre_var = tk.StringVar()
+        self._libre = ttk.Entry(self, textvariable=self._libre_var, width=30)
+        # caché par défaut
+
+        self._var.trace_add("write", self._on_select)
+        self._libre_var.trace_add("write", self._on_libre_change)
+
+    def _on_select(self, *_):
+        val = self._var.get()
+        if _is_autre(val):
+            self._libre.pack(side=tk.LEFT, padx=(6, 0))
+        else:
+            self._libre.pack_forget()
+            self._libre_var.set("")
+        if self._on_change:
+            self._on_change()
+
+    def _on_libre_change(self, *_):
+        if self._on_change:
+            self._on_change()
+
+    def get(self):
+        """Retourne la valeur finale à stocker en base."""
+        val = self._var.get()
+        if _is_autre(val):
+            return self._libre_var.get().strip()
+        return val if val and val != SCORE_LABELS[0] else ""
+
+    def set(self, value):
+        """Charge une valeur : sélectionne dans la liste ou 'Autre...' + texte libre."""
+        if not value:
+            self._var.set("")
+            self._libre_var.set("")
+            return
+        match = _match_option(value, self._choices)
+        if match:
+            self._var.set(match)
+        else:
+            autre_opt = next((o for o in self._choices if _is_autre(o)), None)
+            if autre_opt:
+                self._var.set(autre_opt)
+                self._libre_var.set(value)
+                self._libre.pack(side=tk.LEFT, padx=(6, 0))
+            else:
+                self._var.set(value)
+
+    def disable(self):
+        self._cb.configure(state="disabled")
+        self._libre.configure(state="disabled")
+
+
+class CotationForm(tk.Toplevel):
+    def __init__(self, parent, conn, eval_id):
+        super().__init__(parent)
+        self.conn = conn
+        self.eval_id = eval_id
+        self.ev = db.get_evaluation(conn, eval_id)
+        self.patient = db.get_patient(conn, self.ev["patient_id"])
+        self.locked = bool(self.ev["finalisee"])
+
+        self.title("Cotation ÉPADE" + (" [verrouillée]" if self.locked else ""))
+        self.geometry("1000x720")
+        self.update_idletasks()
+        try:
+            self.grab_set()
+        except Exception:
+            self.after(100, self.grab_set)
+
+        self._score_vars  = {}
+        self._note_wdg    = {}   # _DropdownLibre par item
+        self._cause_wdg   = {}   # _DropdownLibre par domaine
+        self._attitude_wdg = {}  # _DropdownLibre par domaine
+        self._score_dom_vars = {}
+
+        self._build()
+        self._load_data()
+
+    # ── Construction ─────────────────────────────────────────────────────
+
+    def _build(self):
+        canvas = tk.Canvas(self, highlightthickness=0)
+        vsb = ttk.Scrollbar(self, orient=tk.VERTICAL, command=canvas.yview)
+        canvas.configure(yscrollcommand=vsb.set)
+        vsb.pack(side=tk.RIGHT, fill=tk.Y)
+        canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+
+        self._inner = ttk.Frame(canvas, padding=14)
+        win = canvas.create_window((0, 0), window=self._inner, anchor="nw")
+
+        self._inner.bind("<Configure>",
+                         lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
+        canvas.bind("<Configure>", lambda e: canvas.itemconfig(win, width=e.width))
+        for seq, delta in (("<MouseWheel>", -1), ("<Button-4>", -1), ("<Button-5>", 1)):
+            canvas.bind_all(seq, lambda e, d=delta: canvas.yview_scroll(d, "units"))
+
+        self._build_header()
+        ttk.Separator(self._inner).pack(fill=tk.X, pady=8)
+        for dom in "ABCD":
+            self._build_domaine(dom)
+            ttk.Separator(self._inner).pack(fill=tk.X, pady=4)
+        self._build_total()
+        self._build_footer()
+
+    def _build_header(self):
+        f = ttk.LabelFrame(self._inner, text="Identification", padding=10)
+        f.pack(fill=tk.X, pady=(0, 4))
+
+        state = "disabled" if self.locked else "normal"
+        pad = {"padx": (0, 8), "pady": 4}
+
+        # Patient
+        ttk.Label(f, text="Patient :").grid(row=0, column=0, sticky="w", **pad)
+        nom = f"{self.patient['nom'].upper()} {self.patient['prenom']}"
+        ddn = self.patient["date_naissance"] or ""
+        ttk.Label(f, text=f"{nom}  {ddn}", font=("", 10, "bold")).grid(
+            row=0, column=1, columnspan=3, sticky="w", pady=4)
+
+        # Soignant
+        ttk.Label(f, text="Soignant * :").grid(row=1, column=0, sticky="w", **pad)
+        self._soignant_var = tk.StringVar()
+        ttk.Entry(f, textvariable=self._soignant_var, state=state, width=32).grid(
+            row=1, column=1, sticky="w", pady=4)
+        if not self.locked:
+            self._soignant_var.trace_add("write", lambda *_: self._autosave_header())
+
+        # Période
+        ttk.Label(f, text="Période * :").grid(row=2, column=0, sticky="w", **pad)
+        pf = ttk.Frame(f)
+        pf.grid(row=2, column=1, columnspan=3, sticky="w", pady=4)
+        ttk.Label(pf, text="Du").pack(side=tk.LEFT, padx=(0, 4))
+
+        if self.locked:
+            self._du_var = tk.StringVar()
+            self._au_var = tk.StringVar()
+            ttk.Entry(pf, textvariable=self._du_var, state="disabled", width=14).pack(side=tk.LEFT)
+            ttk.Label(pf, text="  au").pack(side=tk.LEFT, padx=(8, 4))
+            ttk.Entry(pf, textvariable=self._au_var, state="disabled", width=14).pack(side=tk.LEFT)
+        else:
+            self._du_entry = LargeDateEntry(pf, on_change=self._on_du_change)
+            self._du_entry.pack(side=tk.LEFT)
+            ttk.Label(pf, text="  au").pack(side=tk.LEFT, padx=(8, 4))
+            self._au_entry = LargeDateEntry(pf, on_change=self._on_au_change)
+            self._au_entry.pack(side=tk.LEFT)
+
+        # Durée
+        ttk.Label(f, text="Durée :").grid(row=3, column=0, sticky="w", **pad)
+        self._duree_var = tk.StringVar()
+        ttk.Entry(f, textvariable=self._duree_var, state=state, width=22).grid(
+            row=3, column=1, sticky="w", pady=4)
+        if not self.locked:
+            self._duree_var.trace_add("write", lambda *_: self._autosave_header())
+
+        # Date cotation
+        ttk.Label(f, text="Date de cotation :").grid(row=4, column=0, sticky="w", **pad)
+        date_txt = self.ev["date_cotation"] or "— sera remplie automatiquement à la validation —"
+        ttk.Label(f, text=date_txt, foreground="gray").grid(
+            row=4, column=1, columnspan=3, sticky="w", pady=4)
+
+    def _build_domaine(self, dom):
+        nom_dom, items = db.DOMAINES[dom]
+        bg = SECTION_BG[dom]
+        listes = db.LISTES[dom]
+
+        f = tk.LabelFrame(self._inner, text=f"Domaine {dom} — {nom_dom}",
+                          bg=bg, padx=8, pady=6, font=("", 10, "bold"))
+        f.pack(fill=tk.X, pady=3)
+
+        cb_state = "disabled" if self.locked else "readonly"
+
+        # En-tête colonnes
+        tk.Label(f, text="Item", bg=bg, font=("", 8, "bold"), width=36, anchor="w").grid(
+            row=0, column=0, sticky="w")
+        tk.Label(f, text="Score", bg=bg, font=("", 8, "bold"), width=20, anchor="w").grid(
+            row=0, column=1, padx=6)
+        tk.Label(f, text="Note soignant", bg=bg, font=("", 8, "bold"), anchor="w").grid(
+            row=0, column=2, padx=6, sticky="w")
+
+        # Lignes items
+        for i, item_key in enumerate(items, start=1):
+            row_bg = bg
+
+            tk.Label(f, text=f"{item_key.upper()} — {db.ITEMS[item_key]}",
+                     bg=row_bg, anchor="w", width=36).grid(
+                row=i, column=0, sticky="w", pady=2)
+
+            score_var = tk.StringVar(value=SCORE_LABELS[0])
+            self._score_vars[item_key] = score_var
+            ttk.Combobox(f, textvariable=score_var, values=SCORE_LABELS,
+                         state=cb_state, width=18).grid(
+                row=i, column=1, padx=6, pady=2, sticky="w")
+            if not self.locked:
+                score_var.trace_add("write", lambda *_, k=item_key: self._autosave_score(k))
+
+            note_wdg = _DropdownLibre(
+                f, listes["note"], state=cb_state,
+                on_change=lambda k=item_key: self._autosave_note(k))
+            note_wdg.grid(row=i, column=2, padx=6, pady=2, sticky="w")
+            if self.locked:
+                note_wdg.disable()
+            self._note_wdg[item_key] = note_wdg
+
+        next_row = len(items) + 1
+
+        # Score domaine
+        sv = tk.StringVar(value=f"Score domaine {dom} : 0 / 16")
+        self._score_dom_vars[dom] = sv
+        tk.Label(f, textvariable=sv, bg=bg, font=("", 9, "italic"), anchor="e").grid(
+            row=next_row, column=0, columnspan=3, sticky="e", pady=(2, 6))
+        next_row += 1
+
+        # Séparateur intérieur
+        tk.Frame(f, bg="#cccccc", height=1).grid(
+            row=next_row, column=0, columnspan=3, sticky="ew", pady=4)
+        next_row += 1
+
+        # Réflexion — cause
+        tk.Label(f, text="Réflexion — cause :", bg=bg, font=("", 9, "bold"),
+                 anchor="w").grid(row=next_row, column=0, sticky="w", pady=2)
+        cause_wdg = _DropdownLibre(
+            f, listes["cause"], state=cb_state,
+            on_change=lambda d=dom: self._autosave_dom(d))
+        cause_wdg.grid(row=next_row, column=1, columnspan=2, padx=6, pady=2, sticky="w")
+        if self.locked:
+            cause_wdg.disable()
+        self._cause_wdg[dom] = cause_wdg
+        next_row += 1
+
+        # Attitude appropriée
+        tk.Label(f, text="Attitude appropriée :", bg=bg, font=("", 9, "bold"),
+                 anchor="w").grid(row=next_row, column=0, sticky="w", pady=2)
+        att_wdg = _DropdownLibre(
+            f, listes["attitude"], state=cb_state,
+            on_change=lambda d=dom: self._autosave_dom(d))
+        att_wdg.grid(row=next_row, column=1, columnspan=2, padx=6, pady=2, sticky="w")
+        if self.locked:
+            att_wdg.disable()
+        self._attitude_wdg[dom] = att_wdg
+
+    def _build_total(self):
+        f = ttk.Frame(self._inner)
+        f.pack(fill=tk.X, pady=8)
+        self._seuil_var = tk.StringVar()
+        ttk.Label(f, textvariable=self._seuil_var, foreground="red",
+                  font=("", 10, "bold")).pack(side=tk.LEFT, padx=8)
+        self._total_var = tk.StringVar(value="SCORE TOTAL : 0 / 64")
+        ttk.Label(f, textvariable=self._total_var,
+                  font=("", 12, "bold")).pack(side=tk.RIGHT)
+
+    def _build_footer(self):
+        f = ttk.Frame(self._inner)
+        f.pack(fill=tk.X, pady=(8, 4))
+        if self.locked:
+            ttk.Button(f, text="Fermer", command=self.destroy).pack(side=tk.RIGHT)
+        else:
+            ttk.Button(f, text="Annuler", command=self.destroy).pack(side=tk.RIGHT, padx=(6, 0))
+            ttk.Button(f, text="Valider et verrouiller",
+                       command=self._valider).pack(side=tk.RIGHT)
+
+    # ── Chargement ────────────────────────────────────────────────────────
+
+    def _load_data(self):
+        ev = self.ev
+        self._soignant_var.set(ev["soignant"] or "")
+        self._duree_var.set(ev["duree"] or "")
+
+        if self.locked:
+            self._du_var.set(ev["periode_du"] or "")
+            self._au_var.set(ev["periode_au"] or "")
+        else:
+            for attr, key in (("_du_entry", "periode_du"), ("_au_entry", "periode_au")):
+                val = ev[key]
+                if val:
+                    try:
+                        getattr(self, attr).set_date(val)
+                    except Exception:
+                        pass
+
+        for key in db.SCORE_COLS:
+            self._score_vars[key].set(_label_from_score(ev[key]))
+        for key in db.NOTE_COLS:
+            item_key = key[5:]
+            self._note_wdg[item_key].set(ev[key] or "")
+
+        for dom in "ABCD":
+            self._cause_wdg[dom].set(ev[f"cause_{dom.lower()}"] or "")
+            self._attitude_wdg[dom].set(ev[f"attitude_{dom.lower()}"] or "")
+
+        self._update_scores()
+
+    # ── Sauvegarde automatique ────────────────────────────────────────────
+
+    def _on_du_change(self):
+        from datetime import date as _date
+        today = _date.today()
+        du = self._du_entry.get_date()
+        if du and du > today:
+            messagebox.showwarning(
+                "Date invalide",
+                "La date de début ne peut pas être dans le futur.",
+                parent=self)
+            self._du_entry.set_date(today)
+            du = today
+        au = self._au_entry.get_date()
+        if du and au and au < du:
+            self._au_entry.set_date(du)
+        self._autosave_header()
+
+    def _on_au_change(self):
+        from datetime import date as _date
+        today = _date.today()
+        du = self._du_entry.get_date()
+        au = self._au_entry.get_date()
+        if au and au > today:
+            messagebox.showwarning(
+                "Date invalide",
+                "La date de fin ne peut pas être dans le futur.",
+                parent=self)
+            self._au_entry.set_date(today)
+            au = today
+        if du and au and au < du:
+            messagebox.showwarning(
+                "Date invalide",
+                "La date de fin ne peut pas être antérieure à la date de début.\n"
+                "La date de fin a été ramenée à la date de début.",
+                parent=self)
+            self._au_entry.set_date(du)
+        self._autosave_header()
+
+    def _autosave_header(self):
+        if self.locked:
+            return
+        try:
+            du = self._du_entry.get_date().strftime("%Y-%m-%d")
+            au = self._au_entry.get_date().strftime("%Y-%m-%d")
+        except Exception:
+            du, au = "", ""
+        db.mettre_a_jour_evaluation(self.conn, self.eval_id,
+                                    soignant=self._soignant_var.get(),
+                                    periode_du=du, periode_au=au,
+                                    duree=self._duree_var.get())
+
+    def _autosave_score(self, item_key):
+        if self.locked:
+            return
+        val = _score_from_label(self._score_vars[item_key].get())
+        db.mettre_a_jour_evaluation(self.conn, self.eval_id, **{item_key: val})
+        self._update_scores()
+
+    def _autosave_note(self, item_key):
+        if self.locked:
+            return
+        db.mettre_a_jour_evaluation(self.conn, self.eval_id,
+                                    **{f"note_{item_key}": self._note_wdg[item_key].get()})
+
+    def _autosave_dom(self, dom):
+        if self.locked:
+            return
+        d = dom.lower()
+        db.mettre_a_jour_evaluation(self.conn, self.eval_id,
+                                    **{f"cause_{d}": self._cause_wdg[dom].get(),
+                                       f"attitude_{d}": self._attitude_wdg[dom].get()})
+
+    # ── Scores temps réel ─────────────────────────────────────────────────
+
+    def _update_scores(self):
+        ev = db.get_evaluation(self.conn, self.eval_id)
+        total = db.score_total(ev)
+        self._total_var.set(f"SCORE TOTAL : {total} / 64")
+        self._seuil_var.set(
+            "Score > 17 — rechercher cause réversible" if total > 17 else "")
+        for dom, (_, items) in db.DOMAINES.items():
+            score = sum(ev[c] or 0 for c in items)
+            self._score_dom_vars[dom].set(f"Score domaine {dom} : {score} / 16")
+
+    # ── Validation ────────────────────────────────────────────────────────
+
+    def _valider(self):
+        self._autosave_header()
+        manquants = db.valider_champs_requis(self.conn, self.eval_id)
+        if manquants:
+            messagebox.showwarning(
+                "Champs manquants",
+                "Impossible de valider. Champs manquants :\n\n• " + "\n• ".join(manquants),
+                parent=self)
+            return
+        if not messagebox.askyesno(
+                "Confirmer", "Cette évaluation sera verrouillée définitivement.\nContinuer ?",
+                parent=self):
+            return
+        db.finaliser_evaluation(self.conn, self.eval_id)
+        messagebox.showinfo("Validée", "L'évaluation est verrouillée.", parent=self)
+        self.destroy()

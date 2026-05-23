@@ -1,0 +1,35 @@
+name: Build exe (branches)
+
+on:
+  push:
+    branches-ignore:
+      - main
+    paths-ignore:
+      - "**.md"
+      - ".gitignore"
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Installer les dépendances
+        run: pip install pyinstaller fpdf2 tkcalendar
+
+      - name: Construire l'exe
+        run: |
+          pyinstaller --onefile --windowed --name EPADE `
+            --add-data "assets/fonts;assets/fonts" `
+            main.py
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: EPADE-windows-${{ github.sha }}
+          path: dist/EPADE.exe
+          retention-days: 30
