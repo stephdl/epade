@@ -39,6 +39,8 @@ pip install fpdf2 tkcalendar pytest
 epade/
 ├── main.py                  # point d'entrée : crée la fenêtre tkinter et ouvre la DB
 ├── db.py                    # toute la logique SQLite (schéma + CRUD)
+├── config.py                # lecture/écriture config.json (scaling, préférences)
+├── version.py               # __version__ = "dev" (remplacé par le tag lors du build CI)
 ├── gui/
 │   ├── main_window.py       # fenêtre principale : liste patients + liste évaluations
 │   ├── patient_form.py      # dialog création/édition patient (dual-mode)
@@ -50,7 +52,8 @@ epade/
 ├── tests/
 │   ├── test_db.py           # tests CRUD SQLite (base en mémoire)
 │   ├── test_validation.py   # tests des règles de validation métier
-│   └── test_pdf.py          # tests de génération PDF
+│   ├── test_pdf.py          # tests de génération PDF
+│   └── test_config.py       # tests lecture/écriture config.json
 ├── data/
 │   └── epade.db             # base SQLite créée automatiquement au premier lancement
 ├── EPADE.desktop            # raccourci Linux
@@ -222,9 +225,9 @@ Polices : LiberationSans TTF (`/usr/share/fonts/liberation-sans-fonts/`) — né
 
 ---
 
-## Tests (pytest — 27 tests, base :memory:)
+## Tests (pytest — 32 tests, base :memory:)
 
-### test_db.py (16 tests)
+### test_db.py (15 tests)
 | Test | Ce qui est vérifié |
 |---|---|
 | `test_creer_et_recuperer_patient` | Création et lecture patient de base |
@@ -262,6 +265,15 @@ Polices : LiberationSans TTF (`/usr/share/fonts/liberation-sans-fonts/`) — né
 | `test_export_resume` | PDF créé, taille > 500 octets |
 | `test_export_historique` | PDF créé avec évaluations |
 | `test_export_historique_sans_evaluations` | PDF créé même sans éval finalisée |
+
+### test_config.py (5 tests)
+| Test | Ce qui est vérifié |
+|---|---|
+| `test_load_defaults_sans_fichier` | defaults retournés si config.json absent |
+| `test_save_et_reload` | save + load round-trip |
+| `test_save_merge_avec_existant` | save fusionne avec les clés existantes |
+| `test_save_ecrase_valeur_existante` | save remplace une valeur existante |
+| `test_load_fichier_corrompu_retourne_defaults` | JSON invalide → defaults |
 
 ---
 

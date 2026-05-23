@@ -8,10 +8,10 @@ _BASE_SIZES = {"title": 13, "section": 11, "list": 10}
 
 
 class MainWindow(tk.Tk):
-    def __init__(self, conn, scaling: float = 1.0):
+    def __init__(self, conn, scaling: float = 1.0, version: str = "dev"):
         super().__init__()
         self.conn = conn
-        self.title("ÉPADE — Gestion des cotations")
+        self.title(f"ÉPADE {version} — Gestion des cotations")
         self.geometry("900x580")
         self.minsize(700, 420)
         self._scaling = 1.0

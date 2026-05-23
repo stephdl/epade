@@ -21,6 +21,9 @@ jobs:
       - name: Installer les dépendances
         run: pip install pyinstaller fpdf2 tkcalendar
 
+      - name: Injecter la version
+        run: Set-Content version.py "__version__ = '${{ github.ref_name }}'"
+
       - name: Construire l'exe
         run: |
           pyinstaller --onefile --windowed --name EPADE `
