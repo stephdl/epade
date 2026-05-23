@@ -122,6 +122,42 @@ bash install.sh
 
 ---
 
+## Installation sur macOS
+
+> **Note importante** : je suis un gros barbu linuxien et je n'ai pas de Mac pour tester
+> tout ça — ces instructions sont théoriques. Si vous testez et que ça fonctionne (ou pas),
+> ouvrez une [issue](https://github.com/stephdl/epade/issues) pour me le faire savoir.
+> Et si vous voulez contribuer à l'achat d'un Mac pour les tests... je suis ouvert aux
+> donations. (je rigole. A moitié.)
+
+### 1. Installer Python
+
+Télécharger Python 3.9+ depuis [python.org](https://www.python.org/downloads/macos/) —
+la version officielle inclut tkinter. Éviter la version Homebrew qui peut ne pas l'inclure.
+
+### 2. Installer les dépendances Python
+
+```bash
+pip3 install fpdf2 tkcalendar
+```
+
+### 3. Lancer l'application
+
+```bash
+cd epade/
+python3 main.py
+```
+
+### Notes spécifiques macOS
+
+- La base de données est créée dans `epade/data/epade.db` — à côté du code
+- Si une fenêtre de sécurité s'affiche ("développeur non identifié"), aller dans
+  **Réglages Système → Confidentialité et sécurité** et autoriser l'application
+- L'export PDF devrait fonctionner — les polices sont embarquées dans `assets/fonts/`
+- Le rendu tkinter peut différer légèrement de Linux/Windows (c'est cosmétique)
+
+---
+
 ## Lancement
 
 ```bash
