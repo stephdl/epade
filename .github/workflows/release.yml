@@ -28,6 +28,7 @@ jobs:
         run: |
           pyinstaller --onefile --windowed --name EPADE `
             --add-data "assets/fonts;assets/fonts" `
+            --icon "assets/epade.ico" `
             main.py
 
       - name: Créer la release GitHub

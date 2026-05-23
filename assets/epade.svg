@@ -1,0 +1,45 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="512" y2="512" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#2563EB"/>
+      <stop offset="1" stop-color="#1E40AF"/>
+    </linearGradient>
+
+    <linearGradient id="accent" x1="120" y1="120" x2="392" y2="392" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F8FAFC"/>
+      <stop offset="1" stop-color="#CBD5E1"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect x="32" y="32" width="448" height="448" rx="96" fill="url(#bg)"/>
+
+  <!-- Document shape -->
+  <path d="M176 136C176 122.745 186.745 112 200 112H286L352 178V336C352 349.255 341.255 360 328 360H200C186.745 360 176 349.255 176 336V136Z"
+        fill="url(#accent)"/>
+
+  <!-- Folded corner -->
+  <path d="M286 112V160C286 173.255 296.745 184 310 184H352"
+        fill="#93C5FD"/>
+
+  <!-- Quotation mark -->
+  <path d="M220 248C220 225.909 237.909 208 260 208H268V232H260C251.163 232 244 239.163 244 248V256H268V304H220V248Z"
+        fill="#1D4ED8"/>
+
+  <!-- Currency / pricing line -->
+  <path d="M220 336H308"
+        stroke="#93C5FD"
+        stroke-width="18"
+        stroke-linecap="round"/>
+
+  <!-- Decorative subtle lines -->
+  <path d="M220 160H264"
+        stroke="#BFDBFE"
+        stroke-width="12"
+        stroke-linecap="round"/>
+
+  <path d="M220 192H320"
+        stroke="#BFDBFE"
+        stroke-width="12"
+        stroke-linecap="round"/>
+</svg>

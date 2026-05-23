@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=EPADE
+Comment=Application de cotation psychogériatrique
+Exec=python3 /home/stephdl/dev/git_work/epade/main.py
+Icon=/home/stephdl/dev/git_work/epade/assets/epade.png
+Terminal=false
+Categories=Medical;Science;
+StartupWMClass=EPADE

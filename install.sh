@@ -14,12 +14,15 @@ mkdir -p "$HOME/.local/share/applications"
 
 cat > "$DESKTOP_FILE" <<EOF
 [Desktop Entry]
+Version=1.0
 Type=Application
-Name=ÉPADE Cotations
-Comment=Gestion des cotations psychogériatriques ÉPADE
+Name=EPADE
+Comment=Application de cotation psychogériatrique
 Exec=python3 $SCRIPT_DIR/main.py
+Icon=$SCRIPT_DIR/assets/epade.png
 Terminal=false
-Categories=Education;MedicalSoftware;
+Categories=Medical;Science;
+StartupWMClass=EPADE
 EOF
 
 chmod +x "$DESKTOP_FILE"
