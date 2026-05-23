@@ -450,7 +450,7 @@ class MainWindow(tk.Tk):
         cfg = config.load()
         dlg = tk.Toplevel(self)
         dlg.title("Paramètres")
-        dlg.resizable(False, False)
+        dlg.resizable(True, True)
         dlg.transient(self)
         dlg.grab_set()
 
@@ -525,3 +525,5 @@ class MainWindow(tk.Tk):
         ttk.Button(btn_frm, text="Annuler", command=_cancel).pack(side=tk.LEFT)
 
         dlg.protocol("WM_DELETE_WINDOW", _cancel)
+        dlg.update_idletasks()
+        dlg.minsize(dlg.winfo_reqwidth(), dlg.winfo_reqheight())
