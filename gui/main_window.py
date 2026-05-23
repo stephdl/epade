@@ -525,5 +525,10 @@ class MainWindow(tk.Tk):
         ttk.Button(btn_frm, text="Annuler", command=_cancel).pack(side=tk.LEFT)
 
         dlg.protocol("WM_DELETE_WINDOW", _cancel)
-        dlg.update_idletasks()
-        dlg.minsize(dlg.winfo_reqwidth(), dlg.winfo_reqheight())
+        def _autosize():
+            dlg.update_idletasks()
+            w = dlg.winfo_reqwidth()
+            h = dlg.winfo_reqheight()
+            dlg.minsize(w, h)
+            dlg.geometry(f"{w}x{h}")
+        dlg.after(10, _autosize)
