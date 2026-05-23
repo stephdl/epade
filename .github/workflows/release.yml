@@ -3,7 +3,7 @@ name: Release (tag sémantique)
 on:
   push:
     tags:
-      - "v*.*.*"
+      - "v*"
 
 jobs:
   release-windows:
@@ -40,4 +40,4 @@ jobs:
             Voir [README.md](https://github.com/${{ github.repository }}/blob/main/README.md)
           files: dist/EPADE.exe
           draft: false
-          prerelease: false
+          prerelease: ${{ contains(github.ref_name, '-') }}
