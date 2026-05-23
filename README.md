@@ -20,6 +20,39 @@ verrouillée définitivement après validation — l'historique est immuable.
 
 ---
 
+## Installation sur Windows
+
+### 1. Télécharger l'exécutable
+
+Rendez-vous sur la page [Releases](https://github.com/stephdl/epade/releases) et téléchargez
+le fichier `EPADE.exe` de la dernière version stable.
+
+### 2. Organiser le dossier
+
+Créez un dossier dédié (par exemple `C:\EPADE\`) et placez-y `EPADE.exe` :
+
+```
+C:\EPADE\
+└── EPADE.exe
+```
+
+La base de données `data\epade.db` sera créée automatiquement dans ce même dossier
+au premier lancement.
+
+### 3. Lancer l'application
+
+Double-cliquez sur `EPADE.exe`. Si Windows affiche un avertissement SmartScreen
+("application non reconnue"), cliquez sur **Informations complémentaires** puis
+**Exécuter quand même**.
+
+### 4. Créer un raccourci bureau (optionnel)
+
+Clic droit sur `EPADE.exe` → **Envoyer vers** → **Bureau (créer un raccourci)**.
+
+> **Aucune installation de Python n'est requise** — tout est embarqué dans l'exe.
+
+---
+
 ## Installation sur Linux (Fedora / RHEL / CentOS)
 
 ### 1. Cloner ou copier le dossier
@@ -222,6 +255,23 @@ Les tests utilisent une base SQLite en mémoire — aucun fichier n'est créé o
 ---
 
 ## Dépannage
+
+### Windows
+
+**L'exe ne démarre pas / fenêtre noire qui disparaît**
+→ Lancer depuis un terminal (`cmd.exe`) pour voir le message d'erreur :
+```
+cd C:\EPADE
+EPADE.exe
+```
+
+**Avertissement SmartScreen au premier lancement**
+→ Cliquer sur **Informations complémentaires** puis **Exécuter quand même** — l'exe n'est pas signé.
+
+**L'export PDF ne s'ouvre pas automatiquement**
+→ Ouvrir le fichier manuellement depuis l'explorateur Windows — le PDF est bien créé à l'emplacement choisi.
+
+### Linux
 
 **`ModuleNotFoundError: No module named 'tkinter'`**
 → Installer `python3-tkinter` (dnf) ou `python3-tk` (apt), voir étape 2.
