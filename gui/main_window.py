@@ -5,6 +5,70 @@ import db
 import config
 from gui.patient_form import PatientForm
 
+
+def _resize_filedialog(parent, w=1100, h=700):
+    """Redimensionne le dialog TkFDialog via Tcl — enforce plusieurs fois car Tk réinitialise la géométrie."""
+    def _check(phase=0, enforced=0):
+        if phase > 100:
+            return
+        try:
+            for child in parent.tk.splitlist(parent.tk.call('winfo', 'children', '.')):
+                if parent.tk.call('winfo', 'class', child) == 'TkFDialog':
+                    parent.tk.call('wm', 'geometry', child, f'{w}x{h}')
+                    parent.tk.call('wm', 'minsize', child, w, h)
+                    if enforced < 5:
+                        parent.after(40, lambda: _check(phase + 1, enforced + 1))
+                    return
+        except Exception:
+            pass
+        parent.after(20, lambda: _check(phase + 1, 0))
+    parent.after(50, lambda: _check(0, 0))
+
+
+def _ask_open_file(parent, **kwargs):
+    from tkinter import filedialog
+    _resize_filedialog(parent)
+    return filedialog.askopenfilename(parent=parent, **kwargs)
+
+
+def _ask_save_file(parent, **kwargs):
+    from tkinter import filedialog
+    _resize_filedialog(parent)
+    return filedialog.asksaveasfilename(parent=parent, **kwargs)
+
+
+def _dialog(parent, title, message, buttons, icon="info", width=520):
+    """Dialog custom avec largeur fixe — évite les coupures de mots de messagebox."""
+    dlg = tk.Toplevel(parent)
+    dlg.title(title)
+    dlg.resizable(False, False)
+    dlg.transient(parent)
+    dlg.grab_set()
+    result = tk.StringVar(value="")
+
+    icons = {"info": "i", "warning": "!", "error": "X"}
+    frm = ttk.Frame(dlg, padding=20)
+    frm.pack(fill=tk.BOTH, expand=True)
+    ttk.Label(frm, text=icons.get(icon, "i"),
+              font=("", 20)).pack(side=tk.LEFT, anchor="n", padx=(0, 14))
+    ttk.Label(frm, text=message, wraplength=width - 80,
+              font=("", 10), justify="left").pack(side=tk.LEFT, anchor="n")
+
+    btn_frm = ttk.Frame(dlg, padding=(20, 0, 20, 16))
+    btn_frm.pack()
+    for label in buttons:
+        ttk.Button(btn_frm, text=label,
+                   command=lambda l=label: [result.set(l), dlg.destroy()],
+                   width=10).pack(side=tk.LEFT, padx=4)
+
+    dlg.update_idletasks()
+    h = dlg.winfo_reqheight()
+    x = parent.winfo_rootx() + (parent.winfo_width() - width) // 2
+    y = parent.winfo_rooty() + (parent.winfo_height() - h) // 2
+    dlg.geometry(f"{width}x{h}+{x}+{y}")
+    dlg.wait_window()
+    return result.get()
+
 _BASE_SIZES = {"title": 13, "section": 11, "list": 10}
 
 
@@ -300,18 +364,16 @@ class MainWindow(tk.Tk):
         self._refresh_evaluations(patient_id)
 
     def _restaurer_db(self):
-        from tkinter import filedialog
         from shutil import copy2
         from pathlib import Path
-        if not messagebox.askyesno(
-                "Restaurer la base",
-                "La base active sera remplacée par la sauvegarde choisie.\n\n"
-                "Toutes les données non sauvegardées seront perdues.\n\n"
-                "Continuer ?",
-                icon="warning", parent=self):
+        rep = _dialog(self, "Restaurer la base",
+                      "La base active sera remplacée par la sauvegarde choisie.\n\n"
+                      "Toutes les données non sauvegardées seront perdues.\n\n"
+                      "Continuer ?",
+                      buttons=["Oui", "Non"], icon="warning")
+        if rep != "Oui":
             return
-        src = filedialog.askopenfilename(
-            parent=self,
+        src = _ask_open_file(self,
             title="Choisir une sauvegarde à restaurer",
             filetypes=[("Base ÉPADE", "*.db"), ("Tous les fichiers", "*.*")],
         )
@@ -320,27 +382,24 @@ class MainWindow(tk.Tk):
         dest = db.DB_PATH
         Path(dest).parent.mkdir(parents=True, exist_ok=True)
         copy2(src, dest)
-        messagebox.showinfo(
-            "Restauration réussie",
-            "La base a été restaurée.\nL'application va redémarrer.",
-            parent=self)
+        _dialog(self, "Restauration réussie",
+                "La base a été restaurée. La liste des patients a été rechargée.",
+                buttons=["OK"], icon="info")
         self.conn.close()
         self.conn = db.init_db()
         self._refresh_patients()
 
     def _sauvegarder_db(self):
-        from tkinter import filedialog
         from datetime import date
         from shutil import copy2
         from pathlib import Path
         src = db.DB_PATH
         if not Path(src).exists():
-            messagebox.showwarning("Base introuvable",
-                                   f"Le fichier base de données est introuvable :\n{src}",
-                                   parent=self)
+            _dialog(self, "Base introuvable",
+                    f"Le fichier base de données est introuvable :\n{src}",
+                    buttons=["OK"], icon="error")
             return
-        dest = filedialog.asksaveasfilename(
-            parent=self,
+        dest = _ask_save_file(self,
             title="Sauvegarder la base de données",
             defaultextension=".db",
             filetypes=[("Base ÉPADE", "*.db"), ("Tous les fichiers", "*.*")],
@@ -349,8 +408,9 @@ class MainWindow(tk.Tk):
         if not dest:
             return
         copy2(src, dest)
-        messagebox.showinfo("Sauvegarde réussie",
-                            f"Base sauvegardée :\n{dest}", parent=self)
+        _dialog(self, "Sauvegarde réussie",
+                f"Base sauvegardée :\n{dest}",
+                buttons=["OK"], icon="info")
 
     def _exporter_pdf(self):
         eid = self._selected_eval_id()
