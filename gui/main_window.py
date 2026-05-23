@@ -55,7 +55,7 @@ class MainWindow(tk.Tk):
                   font=self._font_title).pack(anchor="w")
         ttk.Label(lbl_frame, text=self._version,
                   font=("", 8), foreground="gray").pack(anchor="w")
-        ttk.Button(top, text="⚙ Paramètres",
+        ttk.Button(top, text="Parametres",
                    command=self._ouvrir_parametres).pack(side=tk.RIGHT, padx=(6, 0))
         ttk.Button(top, text="Sauvegarder la base",
                    command=self._sauvegarder_db).pack(side=tk.RIGHT, padx=(6, 0))
@@ -80,7 +80,7 @@ class MainWindow(tk.Tk):
         self._search_var.trace_add("write", lambda *_: self._refresh_patients())
         ttk.Entry(search_frame, textvariable=self._search_var, width=14).pack(
             side=tk.RIGHT, padx=(4, 0))
-        ttk.Label(search_frame, text="🔍").pack(side=tk.RIGHT)
+        ttk.Label(search_frame, text="Rech. :").pack(side=tk.RIGHT)
 
         self._patient_lb = tk.Listbox(body, selectmode=tk.SINGLE,
                                       font=self._font_list, activestyle="none",
@@ -151,7 +151,7 @@ class MainWindow(tk.Tk):
         self._patient_archives = [bool(p["archive"]) for p in patients]
         self._patient_lb.delete(0, tk.END)
         for i, p in enumerate(patients):
-            prefix = "✕ " if p["archive"] else "  "
+            prefix = "[X] " if p["archive"] else "    "
             self._patient_lb.insert(tk.END, f"{prefix}{p['nom'].upper()} {p['prenom']}")
             if p["archive"]:
                 self._patient_lb.itemconfig(i, foreground="gray")
@@ -242,7 +242,7 @@ class MainWindow(tk.Tk):
         self._eval_ids_raw = evals
         self._eval_lb.delete(0, tk.END)
         for e in evals:
-            statut = "🔒" if e["finalisee"] else "✏️  brouillon"
+            statut = "[V]" if e["finalisee"] else "... brouillon"
             date_str = e["date_cotation"] if (e["finalisee"] and e["date_cotation"]) else "en cours"
             du = e["periode_du"] or "—"
             au = e["periode_au"] or "—"
