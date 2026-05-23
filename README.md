@@ -53,7 +53,28 @@ Clic droit sur `EPADE.exe` → **Envoyer vers** → **Bureau (créer un raccourc
 
 ---
 
-## Installation sur Linux (Fedora / RHEL / CentOS)
+## Installation sur Linux — Binaire autonome (recommandée)
+
+Rendez-vous sur la page [Releases](https://github.com/stephdl/epade/releases) et téléchargez
+le fichier `EPADE-linux-x86_64` de la dernière version.
+
+```bash
+# Créer un dossier dédié et y placer le binaire
+mkdir -p ~/EPADE
+mv EPADE-linux-x86_64 ~/EPADE/
+
+# Rendre le binaire exécutable et lancer
+chmod +x ~/EPADE/EPADE-linux-x86_64
+~/EPADE/EPADE-linux-x86_64
+```
+
+La base de données `data/epade.db` est créée automatiquement à côté du binaire.
+
+> **Aucune installation de Python n'est requise** — tout est embarqué dans le binaire.
+
+---
+
+## Installation sur Linux — Depuis les sources (Fedora / RHEL / CentOS)
 
 ### 1. Cloner ou copier le dossier
 
@@ -107,7 +128,7 @@ Ce script rend `main.py` exécutable et crée une entrée dans vos applications
 
 ---
 
-## Installation sur Ubuntu / Debian / Linux Mint
+## Installation sur Linux — Depuis les sources (Ubuntu / Debian / Linux Mint)
 
 ```bash
 # Dépendances système
