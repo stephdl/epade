@@ -13,6 +13,7 @@ def tmp_config(tmp_path, monkeypatch):
 def test_load_defaults_sans_fichier():
     cfg = config.load()
     assert cfg["scaling"] == 1.0
+    assert cfg["filedialog_fontsize"] == 11
 
 
 def test_save_et_reload():

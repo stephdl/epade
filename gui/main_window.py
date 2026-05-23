@@ -25,16 +25,34 @@ def _resize_filedialog(parent, w=1100, h=700):
     parent.after(50, lambda: _check(0, 0))
 
 
+def _apply_filedialog_font(parent):
+    fs = config.load().get("filedialog_fontsize", 11)
+    font = ("TkDefaultFont", int(fs))
+    for pattern in ("*TkFDialog*font", "*TkFDialog*Listbox*font", "*TkFDialog*Entry*font"):
+        parent.option_add(pattern, font, "interactive")
+
+
+def _reset_filedialog_font(parent):
+    for pattern in ("*TkFDialog*font", "*TkFDialog*Listbox*font", "*TkFDialog*Entry*font"):
+        parent.option_add(pattern, "", "interactive")
+
+
 def _ask_open_file(parent, **kwargs):
     from tkinter import filedialog
+    _apply_filedialog_font(parent)
     _resize_filedialog(parent)
-    return filedialog.askopenfilename(parent=parent, **kwargs)
+    result = filedialog.askopenfilename(parent=parent, **kwargs)
+    _reset_filedialog_font(parent)
+    return result
 
 
 def _ask_save_file(parent, **kwargs):
     from tkinter import filedialog
+    _apply_filedialog_font(parent)
     _resize_filedialog(parent)
-    return filedialog.asksaveasfilename(parent=parent, **kwargs)
+    result = filedialog.asksaveasfilename(parent=parent, **kwargs)
+    _reset_filedialog_font(parent)
+    return result
 
 
 def _dialog(parent, title, message, buttons, icon="info", width=520):

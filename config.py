@@ -14,6 +14,7 @@ _DEFAULTS = {
     "etablissement_nom": "",
     "etablissement_adresse": "",
     "etablissement_telephone": "",
+    "filedialog_fontsize": 11,
 }
 
 
