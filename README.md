@@ -360,6 +360,17 @@ EPADE.exe
 
 ---
 
+## Références
+
+Ce logiciel est une implémentation informatique de l'échelle **ÉPADE** (Échelle d'évaluation
+des Personnes Âgées — Symptômes et Syndromes DÉconcertants / PGI-DSS).
+
+**Auteurs de l'échelle :** Monfort JC, Lezy AM, Papin A, Tezenas S
+
+Site officiel : [www.psychoge.fr](https://www.psychoge.fr)
+
+---
+
 ## Licence
 
 Ce logiciel est distribué sous licence **GNU General Public License v3.0**.

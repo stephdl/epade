@@ -1,5 +1,6 @@
 import tkinter as tk
 from tkinter import ttk, messagebox, font as tkfont
+import webbrowser
 import db
 import config
 from gui.patient_form import PatientForm
@@ -140,6 +141,16 @@ class MainWindow(tk.Tk):
         self._patient_ids = []
         self._patient_archives = []
         self._eval_ids = []
+
+        # ── Pied de page — référence échelle ─────────────────────────────
+        footer = ttk.Frame(self, padding=(10, 2, 10, 6))
+        footer.pack(fill=tk.X, side=tk.BOTTOM)
+        ttk.Separator(self, orient=tk.HORIZONTAL).pack(fill=tk.X, side=tk.BOTTOM)
+        lbl_ref = ttk.Label(footer,
+                            text="Echelle EPADE - Monfort JC, Lezy AM, Papin A, Tezenas S  |  www.psychoge.fr",
+                            foreground="#2563EB", cursor="hand2", font=("", 8))
+        lbl_ref.pack(side=tk.LEFT)
+        lbl_ref.bind("<Button-1>", lambda _: webbrowser.open_new("https://www.psychoge.fr"))
 
     # ── Patients ─────────────────────────────────────────────────────────
 
