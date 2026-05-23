@@ -11,6 +11,7 @@ class MainWindow(tk.Tk):
     def __init__(self, conn, scaling: float = 1.0, version: str = "dev"):
         super().__init__()
         self.conn = conn
+        self._version = version
         self.title(f"ÉPADE {version} — Gestion des cotations")
         self.geometry("900x580")
         self.minsize(700, 420)
@@ -48,8 +49,12 @@ class MainWindow(tk.Tk):
     def _build(self):
         top = ttk.Frame(self, padding=(10, 8, 10, 0))
         top.pack(fill=tk.X)
-        ttk.Label(top, text="ÉPADE — Cotations psychogériatriques",
-                  font=self._font_title).pack(side=tk.LEFT)
+        lbl_frame = ttk.Frame(top)
+        lbl_frame.pack(side=tk.LEFT)
+        ttk.Label(lbl_frame, text="ÉPADE — Cotations psychogériatriques",
+                  font=self._font_title).pack(anchor="w")
+        ttk.Label(lbl_frame, text=self._version,
+                  font=("", 8), foreground="gray").pack(anchor="w")
         ttk.Button(top, text="⚙ Paramètres",
                    command=self._ouvrir_parametres).pack(side=tk.RIGHT, padx=(6, 0))
         ttk.Button(top, text="Sauvegarder la base",
