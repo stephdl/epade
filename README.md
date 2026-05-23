@@ -249,12 +249,31 @@ Dossier d'installation\
 > La migration de schéma est automatique : si une nouvelle version ajoute des champs,
 > ils sont créés à l'ouverture sans perte de données.
 
-### Linux
+### Linux — Binaire autonome
+
+```
+~/EPADE/
+├── EPADE-linux-x86_64   ← seul ce fichier est remplacé lors d'une mise à jour
+└── data/
+    └── epade.db         ← conservé intact entre les versions
+```
+
+**Procédure :**
+
+1. **Sauvegarder** la base via le bouton `Sauvegarder la base` (par précaution)
+2. Télécharger le nouveau `EPADE-linux-x86_64` depuis la page [Releases](https://github.com/stephdl/epade/releases)
+3. Remplacer l'ancien binaire — ne pas toucher au dossier `data/`
+4. Lancer le nouveau binaire — la base est automatiquement migrée si nécessaire
+
+> La migration de schéma est automatique : si une nouvelle version ajoute des champs,
+> ils sont créés à l'ouverture sans perte de données.
+
+### Linux — Depuis les sources
 
 ```bash
 cd epade/
 git pull
-python main.py
+python3 main.py
 ```
 
 La base `data/epade.db` n'est pas versionnée — elle est préservée par le `.gitignore`.
