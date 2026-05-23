@@ -16,6 +16,9 @@ __pycache__/
 # PDF générés localement
 *.pdf
 
+# Préférences utilisateur locales (taille interface, etc.)
+config.json
+
 # Éditeurs
 .vscode/
 .idea/

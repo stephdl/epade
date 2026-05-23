@@ -1,16 +1,19 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
 import db
+import config
 from gui.patient_form import PatientForm
 
 
 class MainWindow(tk.Tk):
-    def __init__(self, conn):
+    def __init__(self, conn, scaling: float = 1.0):
         super().__init__()
         self.conn = conn
         self.title("ÉPADE — Gestion des cotations")
         self.geometry("900x580")
         self.minsize(700, 420)
+        self._scaling = scaling
+        self.tk.call("tk", "scaling", scaling)
         self._show_archives = tk.BooleanVar(value=False)
         self._build()
         self._refresh_patients()
@@ -20,6 +23,8 @@ class MainWindow(tk.Tk):
         top.pack(fill=tk.X)
         ttk.Label(top, text="ÉPADE — Cotations psychogériatriques",
                   font=("", 13, "bold")).pack(side=tk.LEFT)
+        ttk.Button(top, text="⚙ Paramètres",
+                   command=self._ouvrir_parametres).pack(side=tk.RIGHT, padx=(6, 0))
         ttk.Button(top, text="Sauvegarder la base",
                    command=self._sauvegarder_db).pack(side=tk.RIGHT, padx=(6, 0))
         ttk.Button(top, text="Restaurer la base",
@@ -319,3 +324,58 @@ class MainWindow(tk.Tk):
             return
         from gui.export_dialog import ExportChoixDialog
         ExportChoixDialog(self, self.conn, eid, pid)
+
+    def _ouvrir_parametres(self):
+        dlg = tk.Toplevel(self)
+        dlg.title("Paramètres")
+        dlg.resizable(False, False)
+        dlg.transient(self)
+        dlg.grab_set()
+
+        ttk.Label(dlg, text="Taille de l'interface", font=("", 11, "bold")).pack(
+            padx=24, pady=(18, 6))
+
+        scale_var = tk.DoubleVar(value=self._scaling)
+
+        frm = ttk.Frame(dlg, padding=(24, 0, 24, 0))
+        frm.pack(fill=tk.X)
+        ttk.Label(frm, text="Petit").pack(side=tk.LEFT)
+        ttk.Label(frm, text="Grand").pack(side=tk.RIGHT)
+
+        slider = ttk.Scale(dlg, from_=0.75, to=2.0, orient=tk.HORIZONTAL,
+                           variable=scale_var, length=280)
+        slider.pack(padx=24, pady=4)
+
+        preview_lbl = ttk.Label(dlg, text="")
+        preview_lbl.pack(pady=(2, 12))
+
+        _STEPS = [0.75, 1.0, 1.25, 1.5, 1.75, 2.0]
+
+        def _snap_and_preview(*_):
+            v = scale_var.get()
+            snapped = min(_STEPS, key=lambda s: abs(s - v))
+            scale_var.set(snapped)
+            pct = int(snapped * 100)
+            preview_lbl.configure(text=f"Zoom : {pct}%")
+            self.tk.call("tk", "scaling", snapped)
+
+        slider.configure(command=_snap_and_preview)
+        _snap_and_preview()
+
+        def _apply():
+            v = scale_var.get()
+            self._scaling = v
+            self.tk.call("tk", "scaling", v)
+            config.save({"scaling": v})
+            dlg.destroy()
+
+        def _cancel():
+            self.tk.call("tk", "scaling", self._scaling)
+            dlg.destroy()
+
+        btn_frm = ttk.Frame(dlg)
+        btn_frm.pack(pady=(0, 16))
+        ttk.Button(btn_frm, text="Appliquer", command=_apply).pack(side=tk.LEFT, padx=(0, 8))
+        ttk.Button(btn_frm, text="Annuler", command=_cancel).pack(side=tk.LEFT)
+
+        dlg.protocol("WM_DELETE_WINDOW", _cancel)
