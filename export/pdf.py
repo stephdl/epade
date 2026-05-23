@@ -2,8 +2,8 @@ from fpdf import FPDF
 from fpdf.enums import XPos, YPos
 from pathlib import Path
 import db
+import config
 
-COPYRIGHT = "© Monfort JC, Lezy AM, Papin A, Tezenas S · www.psychoge.fr"
 SEUIL = 17
 
 import sys as _sys
@@ -21,25 +21,33 @@ FONT_IT   = str(FONT_DIR / "LiberationSans-Italic.ttf")
 
 
 class EpadePDF(FPDF):
-    def __init__(self):
+    def __init__(self, cfg=None):
         super().__init__(orientation="P", unit="mm", format="A4")
         self.add_font("Sans", "", FONT_REG)
         self.add_font("Sans", "B", FONT_BOLD)
         self.add_font("Sans", "I", FONT_IT)
         self.set_auto_page_break(auto=True, margin=15)
         self.set_margins(15, 15, 15)
+        self._cfg = cfg or {}
         self.add_page()
 
     def _nl(self):
         return {"new_x": XPos.LMARGIN, "new_y": YPos.NEXT}
 
     def header_epade(self):
+        nom = self._cfg.get("etablissement_nom", "").strip()
+        adresse = self._cfg.get("etablissement_adresse", "").strip()
+        telephone = self._cfg.get("etablissement_telephone", "").strip()
+
         self.set_font("Sans", "B", 13)
         self.cell(0, 8, "ÉPADE — Échelle d'évaluation des Personnes Âgées", **self._nl())
-        self.set_font("Sans", "", 9)
-        self.cell(0, 5, "Symptômes et Syndromes DÉconcertants  ·  PGI-DSS", **self._nl())
-        self.set_font("Sans", "I", 8)
-        self.cell(0, 5, COPYRIGHT, **self._nl())
+        if nom:
+            self.set_font("Sans", "B", 9)
+            self.cell(0, 5, nom, **self._nl())
+        infos = "  ·  ".join(x for x in [adresse, telephone] if x)
+        if infos:
+            self.set_font("Sans", "", 9)
+            self.cell(0, 5, infos, **self._nl())
         self.ln(2)
         self.set_draw_color(100, 100, 100)
         self.line(15, self.get_y(), 195, self.get_y())
@@ -74,7 +82,7 @@ def export_fiche_complete(conn, eval_id, path):
     ev = db.get_evaluation(conn, eval_id)
     patient = db.get_patient(conn, ev["patient_id"])
 
-    pdf = EpadePDF()
+    pdf = EpadePDF(cfg=config.load())
     pdf.header_epade()
 
     pdf.section_title("Identification du patient")
@@ -184,7 +192,7 @@ def export_resume(conn, eval_id, path):
     ev = db.get_evaluation(conn, eval_id)
     patient = db.get_patient(conn, ev["patient_id"])
 
-    pdf = EpadePDF()
+    pdf = EpadePDF(cfg=config.load())
     pdf.header_epade()
 
     pdf.section_title("Identification")
@@ -236,7 +244,7 @@ def export_historique(conn, patient_id, path):
     patient = db.get_patient(conn, patient_id)
     evals = db.get_evaluations_patient(conn, patient_id)
 
-    pdf = EpadePDF()
+    pdf = EpadePDF(cfg=config.load())
     pdf.header_epade()
 
     pdf.section_title("Patient")

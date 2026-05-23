@@ -11,6 +11,9 @@ CONFIG_PATH = _BASE / "config.json"
 
 _DEFAULTS = {
     "scaling": 1.0,
+    "etablissement_nom": "",
+    "etablissement_adresse": "",
+    "etablissement_telephone": "",
 }
 
 

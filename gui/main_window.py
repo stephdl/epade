@@ -358,46 +358,72 @@ class MainWindow(tk.Tk):
         ExportChoixDialog(self, self.conn, eid, pid)
 
     def _ouvrir_parametres(self):
+        cfg = config.load()
         dlg = tk.Toplevel(self)
         dlg.title("Paramètres")
         dlg.resizable(False, False)
         dlg.transient(self)
         dlg.grab_set()
 
+        # ── Taille interface ──────────────────────────────────────────────
         ttk.Label(dlg, text="Taille de l'interface", font=("", 11, "bold")).pack(
             padx=24, pady=(18, 6))
 
         scale_var = tk.DoubleVar(value=self._scaling)
-
         frm = ttk.Frame(dlg, padding=(24, 0, 24, 0))
         frm.pack(fill=tk.X)
         ttk.Label(frm, text="Petit").pack(side=tk.LEFT)
         ttk.Label(frm, text="Grand").pack(side=tk.RIGHT)
-
         slider = ttk.Scale(dlg, from_=0.75, to=2.0, orient=tk.HORIZONTAL,
-                           variable=scale_var, length=280)
+                           variable=scale_var, length=320)
         slider.pack(padx=24, pady=4)
-
         preview_lbl = ttk.Label(dlg, text="")
-        preview_lbl.pack(pady=(2, 12))
+        preview_lbl.pack(pady=(2, 8))
 
         _STEPS = [0.75, 1.0, 1.25, 1.5, 1.75, 2.0]
-
         _saved_scaling = self._scaling
 
         def _snap_and_preview(*_):
             v = scale_var.get()
             snapped = min(_STEPS, key=lambda s: abs(s - v))
             scale_var.set(snapped)
-            pct = int(snapped * 100)
-            preview_lbl.configure(text=f"Zoom : {pct}%")
+            preview_lbl.configure(text=f"Zoom : {int(snapped * 100)}%")
             self._apply_scaling(snapped)
 
         slider.configure(command=_snap_and_preview)
         _snap_and_preview()
 
+        ttk.Separator(dlg, orient=tk.HORIZONTAL).pack(fill=tk.X, padx=16, pady=(8, 0))
+
+        # ── Établissement ─────────────────────────────────────────────────
+        ttk.Label(dlg, text="Établissement (en-tête des exports PDF)",
+                  font=("", 11, "bold")).pack(padx=24, pady=(14, 6))
+
+        etab_frm = ttk.Frame(dlg, padding=(24, 0, 24, 0))
+        etab_frm.pack(fill=tk.X)
+        etab_frm.columnconfigure(1, weight=1)
+
+        def _field(row, label, key):
+            ttk.Label(etab_frm, text=label).grid(row=row, column=0, sticky="w",
+                                                  pady=3, padx=(0, 8))
+            var = tk.StringVar(value=cfg.get(key, ""))
+            ttk.Entry(etab_frm, textvariable=var, width=36).grid(row=row, column=1, sticky="ew")
+            return var
+
+        nom_var = _field(0, "Nom :", "etablissement_nom")
+        adr_var = _field(1, "Adresse :", "etablissement_adresse")
+        tel_var = _field(2, "Téléphone :", "etablissement_telephone")
+
+        # ── Boutons ───────────────────────────────────────────────────────
+        ttk.Separator(dlg, orient=tk.HORIZONTAL).pack(fill=tk.X, padx=16, pady=(14, 0))
+
         def _apply():
-            config.save({"scaling": self._scaling})
+            config.save({
+                "scaling": self._scaling,
+                "etablissement_nom": nom_var.get().strip(),
+                "etablissement_adresse": adr_var.get().strip(),
+                "etablissement_telephone": tel_var.get().strip(),
+            })
             dlg.destroy()
 
         def _cancel():
@@ -405,7 +431,7 @@ class MainWindow(tk.Tk):
             dlg.destroy()
 
         btn_frm = ttk.Frame(dlg)
-        btn_frm.pack(pady=(0, 16))
+        btn_frm.pack(pady=(10, 16))
         ttk.Button(btn_frm, text="Appliquer", command=_apply).pack(side=tk.LEFT, padx=(0, 8))
         ttk.Button(btn_frm, text="Annuler", command=_cancel).pack(side=tk.LEFT)
 
