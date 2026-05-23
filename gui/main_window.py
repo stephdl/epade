@@ -1,8 +1,10 @@
 import tkinter as tk
-from tkinter import ttk, messagebox
+from tkinter import ttk, messagebox, font as tkfont
 import db
 import config
 from gui.patient_form import PatientForm
+
+_BASE_SIZES = {"title": 13, "section": 11, "list": 10}
 
 
 class MainWindow(tk.Tk):
@@ -12,17 +14,42 @@ class MainWindow(tk.Tk):
         self.title("ÉPADE — Gestion des cotations")
         self.geometry("900x580")
         self.minsize(700, 420)
-        self._scaling = scaling
-        self.tk.call("tk", "scaling", scaling)
+        self._scaling = 1.0
+        self._init_fonts()
         self._show_archives = tk.BooleanVar(value=False)
         self._build()
+        self._apply_scaling(scaling)
         self._refresh_patients()
+
+    def _init_fonts(self):
+        self._font_title = tkfont.Font(family="", size=_BASE_SIZES["title"], weight="bold")
+        self._font_section = tkfont.Font(family="", size=_BASE_SIZES["section"], weight="bold")
+        self._font_list = tkfont.Font(family="", size=_BASE_SIZES["list"])
+        self._named_bases = {}
+        for name in tkfont.names(self):
+            try:
+                f = tkfont.nametofont(name)
+                self._named_bases[name] = abs(f.cget("size"))
+            except Exception:
+                pass
+
+    def _apply_scaling(self, factor: float):
+        self.tk.call("tk", "scaling", factor)
+        self._font_title.configure(size=max(8, round(_BASE_SIZES["title"] * factor)))
+        self._font_section.configure(size=max(8, round(_BASE_SIZES["section"] * factor)))
+        self._font_list.configure(size=max(8, round(_BASE_SIZES["list"] * factor)))
+        for name, base in self._named_bases.items():
+            try:
+                tkfont.nametofont(name).configure(size=max(6, round(base * factor)))
+            except Exception:
+                pass
+        self._scaling = factor
 
     def _build(self):
         top = ttk.Frame(self, padding=(10, 8, 10, 0))
         top.pack(fill=tk.X)
         ttk.Label(top, text="ÉPADE — Cotations psychogériatriques",
-                  font=("", 13, "bold")).pack(side=tk.LEFT)
+                  font=self._font_title).pack(side=tk.LEFT)
         ttk.Button(top, text="⚙ Paramètres",
                    command=self._ouvrir_parametres).pack(side=tk.RIGHT, padx=(6, 0))
         ttk.Button(top, text="Sauvegarder la base",
@@ -39,7 +66,7 @@ class MainWindow(tk.Tk):
         # ── Colonne gauche — patients ──────────────────────────────────────
         search_frame = ttk.Frame(body)
         search_frame.grid(row=0, column=0, sticky="ew", padx=(0, 10))
-        ttk.Label(search_frame, text="Patients", font=("", 11, "bold")).pack(side=tk.LEFT)
+        ttk.Label(search_frame, text="Patients", font=self._font_section).pack(side=tk.LEFT)
         ttk.Checkbutton(search_frame, text="Archivés",
                         variable=self._show_archives,
                         command=self._refresh_patients).pack(side=tk.RIGHT, padx=(4, 0))
@@ -51,7 +78,7 @@ class MainWindow(tk.Tk):
         ttk.Label(search_frame, text="🔍").pack(side=tk.RIGHT)
 
         self._patient_lb = tk.Listbox(body, selectmode=tk.SINGLE,
-                                      font=("", 10), activestyle="none",
+                                      font=self._font_list, activestyle="none",
                                       exportselection=False)
         self._patient_lb.grid(row=1, column=0, sticky="nsew", padx=(0, 10))
         self._patient_lb.bind("<<ListboxSelect>>", self._on_patient_select)
@@ -79,7 +106,7 @@ class MainWindow(tk.Tk):
         # ── Colonne droite — évaluations ──────────────────────────────────
         self._eval_title = tk.StringVar(value="Évaluations")
         ttk.Label(body, textvariable=self._eval_title,
-                  font=("", 11, "bold")).grid(row=0, column=1, sticky="w")
+                  font=self._font_section).grid(row=0, column=1, sticky="w")
 
         self._eval_frame = ttk.Frame(body)
         self._eval_frame.grid(row=1, column=1, sticky="nsew")
@@ -87,7 +114,7 @@ class MainWindow(tk.Tk):
         self._eval_frame.rowconfigure(0, weight=1)
 
         self._eval_lb = tk.Listbox(self._eval_frame, selectmode=tk.SINGLE,
-                                   font=("", 10), activestyle="none",
+                                   font=self._font_list, activestyle="none",
                                    exportselection=False)
         self._eval_lb.grid(row=0, column=0, sticky="nsew")
         self._eval_lb.bind("<Double-Button-1>", self._ouvrir_evaluation)
@@ -351,26 +378,25 @@ class MainWindow(tk.Tk):
 
         _STEPS = [0.75, 1.0, 1.25, 1.5, 1.75, 2.0]
 
+        _saved_scaling = self._scaling
+
         def _snap_and_preview(*_):
             v = scale_var.get()
             snapped = min(_STEPS, key=lambda s: abs(s - v))
             scale_var.set(snapped)
             pct = int(snapped * 100)
             preview_lbl.configure(text=f"Zoom : {pct}%")
-            self.tk.call("tk", "scaling", snapped)
+            self._apply_scaling(snapped)
 
         slider.configure(command=_snap_and_preview)
         _snap_and_preview()
 
         def _apply():
-            v = scale_var.get()
-            self._scaling = v
-            self.tk.call("tk", "scaling", v)
-            config.save({"scaling": v})
+            config.save({"scaling": self._scaling})
             dlg.destroy()
 
         def _cancel():
-            self.tk.call("tk", "scaling", self._scaling)
+            self._apply_scaling(_saved_scaling)
             dlg.destroy()
 
         btn_frm = ttk.Frame(dlg)
