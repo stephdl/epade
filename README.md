@@ -123,6 +123,17 @@ La base de données est créée automatiquement à la première ouverture dans `
 | **Restaurer** | Bouton `Restaurer` (patient archivé sélectionné) | Patient de nouveau actif |
 | **Supprimer définitivement** | Bouton dans `Modifier` | Double confirmation — irréversible |
 
+### Sauvegarde et restauration de la base
+
+Deux boutons sont disponibles en haut à droite de la fenêtre principale :
+
+| Bouton | Action |
+|---|---|
+| **Sauvegarder la base** | Copie `epade.db` vers l'emplacement de votre choix (clé USB, réseau, cloud…). Le nom proposé par défaut inclut la date : `epade_sauvegarde_2026-05-23.db` |
+| **Restaurer la base** | Remplace la base active par une sauvegarde choisie. Une confirmation est demandée avant l'opération. La liste des patients est rechargée immédiatement — pas besoin de relancer l'application |
+
+> **Conseil** : sauvegardez régulièrement, surtout avant une mise à jour de l'application.
+
 ---
 
 ## Structure des fichiers
@@ -151,12 +162,16 @@ epade/
 
 La base de données est un fichier unique : `data/epade.db`
 
-Pour sauvegarder, il suffit de copier ce fichier. Pour restaurer, remplacer le fichier
-avant de lancer l'application.
+**Depuis l'interface** (recommandé) : boutons `Sauvegarder la base` et `Restaurer la base`
+en haut à droite de la fenêtre principale.
 
+**Manuellement** (Linux) :
 ```bash
-# Exemple de sauvegarde manuelle
+# Sauvegarde
 cp data/epade.db ~/Sauvegardes/epade_$(date +%Y%m%d).db
+
+# Restauration (application fermée)
+cp ~/Sauvegardes/epade_20260523.db data/epade.db
 ```
 
 ---

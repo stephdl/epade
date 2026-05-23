@@ -173,6 +173,9 @@ en continu — pas de bouton "Sauvegarder".
 
 ### main_window.py — Fenêtre principale
 
+- Barre haute : titre + boutons `Sauvegarder la base` et `Restaurer la base`
+  - **Sauvegarder** : `filedialog.asksaveasfilename` + `shutil.copy2(DB_PATH, dest)` — nom pré-rempli avec la date
+  - **Restaurer** : confirmation → `copy2(src, DB_PATH)` → `conn.close()` + `db.init_db()` + `_refresh_patients()` sans redémarrage
 - Colonne gauche : liste patients avec recherche temps réel, case "Archivés" pour afficher les archivés (en gris, préfixe ✕)
 - Boutons patient : `+ Nouveau` | `Modifier` | `Archiver` (devient `Restaurer` si patient archivé)
 - Colonne droite : évaluations du patient sélectionné (3 lignes par éval : statut/date/soignant, scores, ligne vide)
