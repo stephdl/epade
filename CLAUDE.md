@@ -307,6 +307,3 @@ Polices : LiberationSans TTF (`/usr/share/fonts/liberation-sans-fonts/`) — né
 - **Seuil critique : score > 17** → rechercher cause réversible
 - Règle de la marée haute : on retient le score le PLUS ÉLEVÉ observé sur la période
 
-### Copyright
-
-© Monfort JC, Lezy AM, Papin A, Tezenas S · www.psychoge.fr

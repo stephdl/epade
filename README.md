@@ -234,6 +234,10 @@ Les tests utilisent une base SQLite en mémoire — aucun fichier n'est créé o
 
 ---
 
-## Copyright de l'échelle ÉPADE
+## Licence
 
-© Monfort JC, Lezy AM, Papin A, Tezenas S · [www.psychoge.fr](http://www.psychoge.fr)
+Ce logiciel est distribué sous licence **GNU General Public License v3.0**.
+Voir le fichier [LICENSE](LICENSE) ou <https://www.gnu.org/licenses/gpl-3.0.html>.
+
+Copyright (C) 2026  Stephane de Labrusse <stephdl@de-labrusse.fr>
+
