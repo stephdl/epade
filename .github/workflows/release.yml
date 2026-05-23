@@ -43,7 +43,7 @@ jobs:
             3. La base de données `data/epade.db` est créée automatiquement à côté de l'exe
 
             ### Installation Linux
-            Voir [README.md](https://github.com/${{ github.repository }}/blob/main/README.md)
+            Voir [README.md](https://github.com/${{ github.repository }}/blob/master/README.md)
           files: dist/EPADE.exe
           draft: false
           prerelease: ${{ contains(github.ref_name, '-') }}
