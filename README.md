@@ -136,6 +136,41 @@ Deux boutons sont disponibles en haut à droite de la fenêtre principale :
 
 ---
 
+## Mise à jour de l'application
+
+### Windows (exe)
+
+La base de données **n'est pas incluse dans le `.exe`** — elle réside dans le dossier `data\` à côté de l'exécutable :
+
+```
+Dossier d'installation\
+├── EPADE.exe          ← seul ce fichier est remplacé lors d'une mise à jour
+└── data\
+    └── epade.db       ← conservé intact entre les versions
+```
+
+**Procédure :**
+
+1. **Sauvegarder** la base via le bouton `Sauvegarder la base` (par précaution)
+2. Télécharger le nouveau `EPADE.exe` depuis la page [Releases](https://github.com/stephdl/epade/releases)
+3. Remplacer l'ancien `EPADE.exe` par le nouveau — ne pas toucher au dossier `data\`
+4. Lancer le nouveau `EPADE.exe` — la base est automatiquement migrée si nécessaire
+
+> La migration de schéma est automatique : si une nouvelle version ajoute des champs,
+> ils sont créés à l'ouverture sans perte de données.
+
+### Linux
+
+```bash
+cd epade/
+git pull
+python main.py
+```
+
+La base `data/epade.db` n'est pas versionnée — elle est préservée par le `.gitignore`.
+
+---
+
 ## Structure des fichiers
 
 ```
