@@ -9,7 +9,7 @@ permissions:
   contents: write
 
 jobs:
-  release-windows:
+  build-windows:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
@@ -31,6 +31,58 @@ jobs:
             --icon "assets/epade.ico" `
             main.py
 
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: EPADE-windows
+          path: dist/EPADE.exe
+
+  build-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Installer tkinter
+        run: sudo apt-get install -y python3-tk
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Installer les dépendances
+        run: pip install pyinstaller fpdf2 tkcalendar
+
+      - name: Injecter la version
+        run: echo "__version__ = '${{ github.ref_name }}'" > version.py
+
+      - name: Construire le binaire
+        run: |
+          pyinstaller --onefile --windowed --name EPADE \
+            --add-data "assets/fonts:assets/fonts" \
+            --icon "assets/epade.ico" \
+            main.py
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: EPADE-linux
+          path: dist/EPADE
+
+  release:
+    needs: [build-windows, build-linux]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Télécharger les artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: dist
+
+      - name: Renommer les binaires
+        run: |
+          mv dist/EPADE-windows/EPADE.exe dist/EPADE.exe
+          mv dist/EPADE-linux/EPADE dist/EPADE-linux-x86_64
+          chmod +x dist/EPADE-linux-x86_64
+
       - name: Créer la release GitHub
         uses: softprops/action-gh-release@v2
         with:
@@ -41,11 +93,19 @@ jobs:
             ### Installation Windows
             1. Télécharger `EPADE.exe`
             2. Double-cliquer pour lancer — aucune installation requise
-            3. La base de données `data/epade.db` est créée automatiquement à côté de l'exe
+            3. La base de données `data\epade.db` est créée automatiquement à côté de l'exe
 
-            ### Installation Linux
+            ### Installation Linux (binaire autonome)
+            1. Télécharger `EPADE-linux-x86_64`
+            2. Le rendre exécutable : `chmod +x EPADE-linux-x86_64`
+            3. Lancer : `./EPADE-linux-x86_64`
+            4. La base de données `data/epade.db` est créée automatiquement à côté du binaire
+
+            ### Installation Linux (depuis les sources) / macOS
             Voir [README.md](https://github.com/${{ github.repository }}/blob/master/README.md)
           generate_release_notes: true
-          files: dist/EPADE.exe
+          files: |
+            dist/EPADE.exe
+            dist/EPADE-linux-x86_64
           draft: false
           prerelease: ${{ contains(github.ref_name, '-') }}

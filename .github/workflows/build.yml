@@ -1,4 +1,4 @@
-name: Build exe (branches)
+name: Build (branches)
 
 on:
   push:
@@ -38,4 +38,38 @@ jobs:
         with:
           name: EPADE-windows-${{ github.sha }}
           path: dist/EPADE.exe
+          retention-days: 30
+
+  build-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Installer tkinter
+        run: sudo apt-get install -y python3-tk
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Installer les dépendances
+        run: pip install pyinstaller fpdf2 tkcalendar
+
+      - name: Injecter la version
+        run: |
+          ver="${{ github.ref_name }}-${{ github.sha }}"
+          echo "__version__ = '${ver:0:30}'" > version.py
+
+      - name: Construire le binaire
+        run: |
+          pyinstaller --onefile --windowed --name EPADE \
+            --add-data "assets/fonts:assets/fonts" \
+            --icon "assets/epade.ico" \
+            main.py
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: EPADE-linux-${{ github.sha }}
+          path: dist/EPADE
           retention-days: 30
