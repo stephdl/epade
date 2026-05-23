@@ -8,7 +8,9 @@ SEUIL = 17
 
 import sys as _sys
 if getattr(_sys, "frozen", False):
-    _BASE = Path(_sys.executable).parent
+    # PyInstaller --onefile extrait les assets dans sys._MEIPASS (tmp),
+    # pas dans le dossier de l'exe
+    _BASE = Path(_sys._MEIPASS)
 else:
     _BASE = Path(__file__).parent.parent
 
