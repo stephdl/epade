@@ -87,7 +87,7 @@ def _dialog(parent, title, message, buttons, icon="info", width=520):
     dlg.wait_window()
     return result.get()
 
-_BASE_SIZES = {"title": 13, "section": 11, "list": 10}
+_BASE_SIZES = {"title": 13, "section": 11, "list": 10, "footer": 9}
 
 
 class MainWindow(tk.Tk):
@@ -109,6 +109,7 @@ class MainWindow(tk.Tk):
         self._font_title = tkfont.Font(family="", size=_BASE_SIZES["title"], weight="bold")
         self._font_section = tkfont.Font(family="", size=_BASE_SIZES["section"], weight="bold")
         self._font_list = tkfont.Font(family="", size=_BASE_SIZES["list"])
+        self._font_footer = tkfont.Font(family="", size=_BASE_SIZES["footer"])
         self._named_bases = {}
         for name in tkfont.names(self):
             try:
@@ -122,6 +123,7 @@ class MainWindow(tk.Tk):
         self._font_title.configure(size=max(8, round(_BASE_SIZES["title"] * factor)))
         self._font_section.configure(size=max(8, round(_BASE_SIZES["section"] * factor)))
         self._font_list.configure(size=max(8, round(_BASE_SIZES["list"] * factor)))
+        self._font_footer.configure(size=max(7, round(_BASE_SIZES["footer"] * factor)))
         for name, base in self._named_bases.items():
             try:
                 tkfont.nametofont(name).configure(size=max(6, round(base * factor)))
@@ -137,7 +139,7 @@ class MainWindow(tk.Tk):
         ttk.Label(lbl_frame, text="ÉPADE — Cotations psychogériatriques",
                   font=self._font_title).pack(anchor="w")
         ttk.Label(lbl_frame, text=self._version,
-                  font=("", 8), foreground="gray").pack(anchor="w")
+                  font=self._font_footer, foreground="gray").pack(anchor="w")
         ttk.Button(top, text="Parametres",
                    command=self._ouvrir_parametres).pack(side=tk.RIGHT, padx=(6, 0))
         ttk.Button(top, text="Sauvegarder la base",
@@ -230,9 +232,24 @@ class MainWindow(tk.Tk):
         ttk.Separator(self, orient=tk.HORIZONTAL).pack(fill=tk.X, side=tk.BOTTOM)
         lbl_ref = ttk.Label(footer,
                             text="Echelle EPADE - Monfort JC, Lezy AM, Papin A, Tezenas S  |  www.psychoge.fr",
-                            foreground="#2563EB", cursor="hand2", font=("", 8))
+                            foreground="#2563EB", cursor="hand2", font=self._font_footer)
         lbl_ref.pack(side=tk.LEFT)
         lbl_ref.bind("<Button-1>", lambda _: webbrowser.open_new("https://www.psychoge.fr"))
+
+        ttk.Label(footer, text="Stephane de Labrusse  |",
+                  font=self._font_footer).pack(side=tk.RIGHT, padx=(4, 0))
+
+        lbl_repo = ttk.Label(footer, text="github.com/stephdl/epade",
+                             foreground="#2563EB", cursor="hand2", font=self._font_footer)
+        lbl_repo.pack(side=tk.RIGHT, padx=(0, 4))
+        lbl_repo.bind("<Button-1>", lambda _: webbrowser.open_new("https://github.com/stephdl/epade"))
+
+        ttk.Label(footer, text="|", font=self._font_footer).pack(side=tk.RIGHT, padx=4)
+
+        lbl_email = ttk.Label(footer, text="stephdl@de-labrusse.fr",
+                              foreground="#2563EB", cursor="hand2", font=self._font_footer)
+        lbl_email.pack(side=tk.RIGHT, padx=(0, 4))
+        lbl_email.bind("<Button-1>", lambda _: webbrowser.open_new("mailto:stephdl@de-labrusse.fr"))
 
     # ── Patients ─────────────────────────────────────────────────────────
 
@@ -463,8 +480,9 @@ class MainWindow(tk.Tk):
         frm.pack(fill=tk.X)
         ttk.Label(frm, text="Petit").pack(side=tk.LEFT)
         ttk.Label(frm, text="Grand").pack(side=tk.RIGHT)
-        slider = ttk.Scale(dlg, from_=0.75, to=2.0, orient=tk.HORIZONTAL,
-                           variable=scale_var, length=320)
+        slider = tk.Scale(dlg, from_=0.75, to=2.0, orient=tk.HORIZONTAL,
+                          variable=scale_var, length=320, resolution=0.01,
+                          sliderlength=30, width=18, showvalue=False)
         slider.pack(padx=24, pady=4)
         preview_lbl = ttk.Label(dlg, text="")
         preview_lbl.pack(pady=(2, 8))
