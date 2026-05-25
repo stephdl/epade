@@ -238,7 +238,8 @@ class CotationForm(tk.Toplevel):
         f = tk.LabelFrame(self._inner, text=f"Domaine {dom} — {nom_dom}",
                           bg=bg, padx=8, pady=6, font=("", 10, "bold"))
         f.pack(fill=tk.X, pady=3)
-        f.columnconfigure(1, weight=1)
+        f.columnconfigure(1, weight=2)
+        f.columnconfigure(2, weight=1)
 
         cb_state = "disabled" if self.locked else "readonly"
 
@@ -269,7 +270,7 @@ class CotationForm(tk.Toplevel):
             note_wdg = _DropdownLibre(
                 f, listes["note"], state=cb_state,
                 on_change=lambda k=item_key: self._autosave_note(k))
-            note_wdg.grid(row=i, column=2, padx=6, pady=2, sticky="w")
+            note_wdg.grid(row=i, column=2, padx=6, pady=2, sticky="ew")
             if self.locked:
                 note_wdg.disable()
             self._note_wdg[item_key] = note_wdg
