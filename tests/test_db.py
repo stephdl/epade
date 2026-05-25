@@ -1,10 +1,9 @@
 import pytest
-import sqlite3
 from db import (
     init_db, creer_patient, get_patient, modifier_patient, rechercher_patients,
     archiver_patient, restaurer_patient, supprimer_patient,
     creer_evaluation, get_evaluation, get_evaluations_patient,
-    mettre_a_jour_evaluation, valider_champs_requis, finaliser_evaluation,
+    mettre_a_jour_evaluation, finaliser_evaluation,
     supprimer_evaluation, score_domaine, score_total, SCORE_COLS,
 )
 
@@ -105,7 +104,7 @@ def test_supprimer_patient_supprime_evaluations(conn):
 
 
 def test_recherche_exclut_archives_par_defaut(conn):
-    pid1 = creer_patient(conn, "Actif", "Patient")
+    creer_patient(conn, "Actif", "Patient")
     pid2 = creer_patient(conn, "Archive", "Patient")
     archiver_patient(conn, pid2)
     res = rechercher_patients(conn, "")

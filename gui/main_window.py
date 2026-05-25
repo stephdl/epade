@@ -1,3 +1,4 @@
+import contextlib
 import tkinter as tk
 from tkinter import ttk, messagebox, font as tkfont
 import webbrowser
@@ -11,7 +12,7 @@ def _resize_filedialog(parent, w=1100, h=700):
     def _check(phase=0, enforced=0):
         if phase > 100:
             return
-        try:
+        with contextlib.suppress(Exception):
             for child in parent.tk.splitlist(parent.tk.call('winfo', 'children', '.')):
                 if parent.tk.call('winfo', 'class', child) == 'TkFDialog':
                     parent.tk.call('wm', 'geometry', child, f'{w}x{h}')
@@ -19,8 +20,6 @@ def _resize_filedialog(parent, w=1100, h=700):
                     if enforced < 5:
                         parent.after(40, lambda: _check(phase + 1, enforced + 1))
                     return
-        except Exception:
-            pass
         parent.after(20, lambda: _check(phase + 1, 0))
     parent.after(50, lambda: _check(0, 0))
 
@@ -112,11 +111,9 @@ class MainWindow(tk.Tk):
         self._font_footer = tkfont.Font(family="", size=_BASE_SIZES["footer"])
         self._named_bases = {}
         for name in tkfont.names(self):
-            try:
+            with contextlib.suppress(Exception):
                 f = tkfont.nametofont(name)
                 self._named_bases[name] = abs(f.cget("size"))
-            except Exception:
-                pass
 
     def _apply_scaling(self, factor: float):
         self.tk.call("tk", "scaling", factor)
@@ -125,10 +122,8 @@ class MainWindow(tk.Tk):
         self._font_list.configure(size=max(8, round(_BASE_SIZES["list"] * factor)))
         self._font_footer.configure(size=max(7, round(_BASE_SIZES["footer"] * factor)))
         for name, base in self._named_bases.items():
-            try:
+            with contextlib.suppress(Exception):
                 tkfont.nametofont(name).configure(size=max(6, round(base * factor)))
-            except Exception:
-                pass
         self._scaling = factor
 
     def _build(self):

@@ -1,3 +1,4 @@
+import contextlib
 import tkinter as tk
 from tkinter import ttk, messagebox
 import webbrowser
@@ -370,10 +371,8 @@ class CotationForm(tk.Toplevel):
             for attr, key in (("_du_entry", "periode_du"), ("_au_entry", "periode_au")):
                 val = ev[key]
                 if val:
-                    try:
+                    with contextlib.suppress(Exception):
                         getattr(self, attr).set_date(val)
-                    except Exception:
-                        pass
 
         for key in db.SCORE_COLS:
             self._score_vars[key].set(_label_from_score(ev[key], item_key=key))
