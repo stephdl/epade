@@ -451,6 +451,17 @@ def get_evaluations_patient(conn, patient_id):
     ).fetchall()
 
 
+def supprimer_evaluation(conn, eval_id):
+    """Supprime un brouillon (finalisee=0). Lève ValueError si finalisée."""
+    row = conn.execute("SELECT finalisee FROM evaluations WHERE id=?", (eval_id,)).fetchone()
+    if row is None:
+        raise ValueError("Évaluation introuvable.")
+    if row["finalisee"] == 1:
+        raise ValueError("Impossible de supprimer une évaluation finalisée.")
+    conn.execute("DELETE FROM evaluations WHERE id=? AND finalisee=0", (eval_id,))
+    conn.commit()
+
+
 def mettre_a_jour_evaluation(conn, eval_id, **champs):
     """Met à jour les champs d'un brouillon (finalisee=0 obligatoire)."""
     if not champs:

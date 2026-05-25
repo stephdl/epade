@@ -208,6 +208,7 @@ class MainWindow(tk.Tk):
                                    exportselection=False)
         self._eval_lb.grid(row=0, column=0, sticky="nsew")
         self._eval_lb.bind("<Double-Button-1>", self._ouvrir_evaluation)
+        self._eval_lb.bind("<<ListboxSelect>>", lambda _: self._update_suppr_eval_btn())
 
         sb_e = ttk.Scrollbar(self._eval_frame, command=self._eval_lb.yview)
         sb_e.grid(row=0, column=1, sticky="ns")
@@ -220,7 +221,10 @@ class MainWindow(tk.Tk):
         ttk.Button(btn_frame, text="Ouvrir",
                    command=self._ouvrir_evaluation).pack(side=tk.LEFT, padx=(0, 6))
         ttk.Button(btn_frame, text="Exporter PDF",
-                   command=self._exporter_pdf).pack(side=tk.LEFT)
+                   command=self._exporter_pdf).pack(side=tk.LEFT, padx=(0, 6))
+        self._btn_suppr_eval = ttk.Button(btn_frame, text="Supprimer brouillon",
+                                          command=self._supprimer_evaluation, state="disabled")
+        self._btn_suppr_eval.pack(side=tk.LEFT)
 
         self._patient_ids = []
         self._patient_archives = []
@@ -374,6 +378,33 @@ class MainWindow(tk.Tk):
         if idx >= len(evals):
             return None
         return evals[idx]["id"]
+
+    def _selected_eval_is_brouillon(self):
+        sel = self._eval_lb.curselection()
+        if not sel:
+            return False
+        idx = sel[0] // 3
+        evals = getattr(self, "_eval_ids_raw", [])
+        if idx >= len(evals):
+            return False
+        return not evals[idx]["finalisee"]
+
+    def _update_suppr_eval_btn(self):
+        state = "normal" if self._selected_eval_is_brouillon() else "disabled"
+        self._btn_suppr_eval.configure(state=state)
+
+    def _supprimer_evaluation(self):
+        eid = self._selected_eval_id()
+        pid = self._selected_patient_id()
+        if eid is None or not self._selected_eval_is_brouillon():
+            return
+        rep = _dialog(self, "Supprimer le brouillon",
+                      "Ce brouillon sera supprimé définitivement.\n\nContinuer ?",
+                      buttons=["Supprimer", "Annuler"], icon="warning")
+        if rep != "Supprimer":
+            return
+        db.supprimer_evaluation(self.conn, eid)
+        self._refresh_evaluations(pid)
 
     def _nouvelle_evaluation(self):
         pid = self._selected_patient_id()
