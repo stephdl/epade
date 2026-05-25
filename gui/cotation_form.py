@@ -47,22 +47,26 @@ def _match_option(value, options):
     return value if value in options else None
 
 
+_VIDE = "—"
+
+
 class _DropdownLibre(ttk.Frame):
     """Combobox + Entry pour champ libre (visible si 'Autre...' sélectionné)."""
 
     def __init__(self, parent, choices, state="readonly", on_change=None, **kw):
         super().__init__(parent, **kw)
-        self._choices = choices  # NB: ne pas nommer _options — collision avec ttk interne
+        self.columnconfigure(0, weight=1)
+        self._choices = [_VIDE] + list(choices)  # NB: ne pas nommer _options — collision avec ttk interne
         self._on_change = on_change
 
-        self._var = tk.StringVar()
-        self._cb = ttk.Combobox(self, textvariable=self._var, values=choices,
+        self._var = tk.StringVar(value=_VIDE)
+        self._cb = ttk.Combobox(self, textvariable=self._var, values=self._choices,
                                 state=state, width=42)
-        self._cb.pack(side=tk.LEFT)
+        self._cb.grid(row=0, column=0, sticky="ew")
 
         self._libre_var = tk.StringVar()
         self._libre = ttk.Entry(self, textvariable=self._libre_var, width=30)
-        # caché par défaut
+        # caché par défaut (column 1, pas de grid tant que non affiché)
 
         self._var.trace_add("write", self._on_select)
         self._libre_var.trace_add("write", self._on_libre_change)
@@ -70,9 +74,9 @@ class _DropdownLibre(ttk.Frame):
     def _on_select(self, *_):
         val = self._var.get()
         if _is_autre(val):
-            self._libre.pack(side=tk.LEFT, padx=(6, 0))
+            self._libre.grid(row=0, column=1, padx=(6, 0))
         else:
-            self._libre.pack_forget()
+            self._libre.grid_remove()
             self._libre_var.set("")
         if self._on_change:
             self._on_change()
@@ -84,15 +88,18 @@ class _DropdownLibre(ttk.Frame):
     def get(self):
         """Retourne la valeur finale à stocker en base."""
         val = self._var.get()
+        if not val or val == _VIDE:
+            return ""
         if _is_autre(val):
             return self._libre_var.get().strip()
-        return val if val and val != SCORE_LABELS[0] else ""
+        return val
 
     def set(self, value):
         """Charge une valeur : sélectionne dans la liste ou 'Autre...' + texte libre."""
         if not value:
-            self._var.set("")
+            self._var.set(_VIDE)
             self._libre_var.set("")
+            self._libre.grid_remove()
             return
         match = _match_option(value, self._choices)
         if match:
@@ -102,7 +109,7 @@ class _DropdownLibre(ttk.Frame):
             if autre_opt:
                 self._var.set(autre_opt)
                 self._libre_var.set(value)
-                self._libre.pack(side=tk.LEFT, padx=(6, 0))
+                self._libre.grid(row=0, column=1, padx=(6, 0))
             else:
                 self._var.set(value)
 
@@ -254,7 +261,8 @@ class CotationForm(tk.Toplevel):
         f = tk.LabelFrame(self._inner, text=f"Domaine {dom} — {nom_dom}",
                           bg=bg, padx=8, pady=6, font=("", 10, "bold"))
         f.pack(fill=tk.X, pady=3)
-        f.columnconfigure(1, weight=1)
+        f.columnconfigure(1, weight=2)
+        f.columnconfigure(2, weight=1)
 
         cb_state = "disabled" if self.locked else "readonly"
 
@@ -285,7 +293,7 @@ class CotationForm(tk.Toplevel):
             note_wdg = _DropdownLibre(
                 f, listes["note"], state=cb_state,
                 on_change=lambda k=item_key: self._autosave_note(k))
-            note_wdg.grid(row=i, column=2, padx=6, pady=2, sticky="w")
+            note_wdg.grid(row=i, column=2, padx=6, pady=2, sticky="ew")
             if self.locked:
                 note_wdg.disable()
             self._note_wdg[item_key] = note_wdg
@@ -310,7 +318,7 @@ class CotationForm(tk.Toplevel):
         cause_wdg = _DropdownLibre(
             f, listes["cause"], state=cb_state,
             on_change=lambda d=dom: self._autosave_dom(d))
-        cause_wdg.grid(row=next_row, column=1, columnspan=2, padx=6, pady=2, sticky="w")
+        cause_wdg.grid(row=next_row, column=1, columnspan=2, padx=6, pady=2, sticky="ew")
         if self.locked:
             cause_wdg.disable()
         self._cause_wdg[dom] = cause_wdg
@@ -322,7 +330,7 @@ class CotationForm(tk.Toplevel):
         att_wdg = _DropdownLibre(
             f, listes["attitude"], state=cb_state,
             on_change=lambda d=dom: self._autosave_dom(d))
-        att_wdg.grid(row=next_row, column=1, columnspan=2, padx=6, pady=2, sticky="w")
+        att_wdg.grid(row=next_row, column=1, columnspan=2, padx=6, pady=2, sticky="ew")
         if self.locked:
             att_wdg.disable()
         self._attitude_wdg[dom] = att_wdg
