@@ -52,7 +52,7 @@ class PatientForm(tk.Toplevel):
 
         lbl("Nom *", row); self._nom = ent(row); row += 1
         lbl("Prénom *", row); self._prenom = ent(row); row += 1
-        lbl("Date de naissance", row); self._ddn = ent(row, 18); row += 1
+        lbl("Date de naissance *", row); self._ddn = ent(row, 18); row += 1
         lbl("N° dossier", row); self._ndossier = ent(row, 18); row += 1
 
         ttk.Separator(frame).grid(row=row, columnspan=2, sticky="ew", pady=6); row += 1
@@ -133,9 +133,11 @@ class PatientForm(tk.Toplevel):
     def _valider(self):
         nom    = self._nom.get().strip()
         prenom = self._prenom.get().strip()
-        if not nom or not prenom:
+        ddn    = self._ddn.get().strip()
+        if not nom or not prenom or not ddn:
             messagebox.showwarning("Champs manquants",
-                                   "Le nom et le prénom sont obligatoires.", parent=self)
+                                   "Le nom, le prénom et la date de naissance sont obligatoires.",
+                                   parent=self)
             return
 
         champs = dict(

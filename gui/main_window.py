@@ -263,7 +263,8 @@ class MainWindow(tk.Tk):
         self._patient_lb.delete(0, tk.END)
         for i, p in enumerate(patients):
             prefix = "[X] " if p["archive"] else "    "
-            self._patient_lb.insert(tk.END, f"{prefix}{p['nom'].upper()} {p['prenom']}")
+            ddn = f" ({p['date_naissance']})" if p["date_naissance"] else ""
+            self._patient_lb.insert(tk.END, f"{prefix}{p['nom'].upper()} {p['prenom']}{ddn}")
             if p["archive"]:
                 self._patient_lb.itemconfig(i, foreground="gray")
         self._eval_lb.delete(0, tk.END)
