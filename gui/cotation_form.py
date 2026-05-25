@@ -141,7 +141,7 @@ class CotationForm(tk.Toplevel):
 
     def _build(self):
         canvas = tk.Canvas(self, highlightthickness=0)
-        vsb = ttk.Scrollbar(self, orient=tk.VERTICAL, command=canvas.yview)
+        vsb = tk.Scrollbar(self, orient=tk.VERTICAL, command=canvas.yview, width=16)
         canvas.configure(yscrollcommand=vsb.set)
         vsb.pack(side=tk.RIGHT, fill=tk.Y)
         canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
@@ -152,11 +152,6 @@ class CotationForm(tk.Toplevel):
         self._inner.bind("<Configure>",
                          lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
         canvas.bind("<Configure>", lambda e: canvas.itemconfig(win, width=e.width))
-        _seqs = ("<MouseWheel>", "<Button-4>", "<Button-5>")
-        for seq, delta in zip(_seqs, (-1, -1, 1)):
-            canvas.bind_all(seq, lambda e, d=delta: canvas.yview_scroll(d, "units"))
-        self.bind("<Destroy>", lambda e: [canvas.unbind_all(s) for s in _seqs]
-                  if e.widget is self else None)
 
         self._build_header()
         ttk.Separator(self._inner).pack(fill=tk.X, pady=8)
@@ -165,6 +160,27 @@ class CotationForm(tk.Toplevel):
             ttk.Separator(self._inner).pack(fill=tk.X, pady=4)
         self._build_total()
         self._build_footer()
+
+        # Binder la molette sur tous les widgets après leur création.
+        # bind_all ne fonctionne pas car les class-bindings ttk appellent break
+        # sur Button-4/5 avant que "all" soit atteint.
+        def _scroll(e):
+            canvas.yview_scroll(-1 if e.num == 4 else 1, "units")
+
+        def _scroll_win(e):
+            canvas.yview_scroll(int(-1 * e.delta / 120), "units")
+
+        def _apply(w):
+            w.bind("<Button-4>", _scroll, add="+")
+            w.bind("<Button-5>", _scroll, add="+")
+            w.bind("<MouseWheel>", _scroll_win, add="+")
+            for child in w.winfo_children():
+                _apply(child)
+
+        _apply(self._inner)
+        canvas.bind("<Button-4>", _scroll, add="+")
+        canvas.bind("<Button-5>", _scroll, add="+")
+        canvas.bind("<MouseWheel>", _scroll_win, add="+")
 
     def _build_header(self):
         _PDF_URL = "https://www.psychoge.fr/_files/ugd/3d0eb6_fe86bd3112324bfd8d8dc27c86e44003.pdf"
