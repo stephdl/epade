@@ -12,7 +12,7 @@ verrouillée définitivement après validation — l'historique est immuable.
 
 | Composant | Version minimale | Notes |
 |---|---|---|
-| Python | 3.9+ | Inclus sur la plupart des distributions Linux |
+| Python | 3.10+ | Inclus sur la plupart des distributions Linux (3.9 en fin de vie oct. 2025) |
 | tkinter | — | Parfois absent, voir ci-dessous |
 | fpdf2 | 2.7+ | Export PDF |
 | tkcalendar | 1.6+ | Sélecteurs de date |
@@ -49,7 +49,8 @@ Double-cliquez sur `EPADE.exe`. Si Windows affiche un avertissement SmartScreen
 
 Clic droit sur `EPADE.exe` → **Envoyer vers** → **Bureau (créer un raccourci)**.
 
-> **Aucune installation de Python n'est requise** — tout est embarqué dans l'exe.
+> **Aucune installation de Python n'est requise** — tout est embarqué dans l'exe (Python 3.14).
+> **Windows 10 ou 11 requis** — Windows 7 et 8 ne sont plus supportés.
 
 ---
 
@@ -153,7 +154,7 @@ bash install.sh
 
 ### 1. Installer Python
 
-Télécharger Python 3.9+ depuis [python.org](https://www.python.org/downloads/macos/) —
+Télécharger Python 3.10+ depuis [python.org](https://www.python.org/downloads/macos/) —
 la version officielle inclut tkinter. Éviter la version Homebrew qui peut ne pas l'inclure.
 
 ### 2. Installer les dépendances Python
