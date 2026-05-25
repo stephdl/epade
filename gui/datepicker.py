@@ -1,3 +1,4 @@
+import contextlib
 import tkinter as tk
 from tkinter import ttk
 from datetime import datetime, date as _date
@@ -114,19 +115,15 @@ class LargeDateEntry(ttk.Frame):
         cal = Calendar(win, selectmode="day", maxdate=_date.today(), **_CAL_KW)
         cal.pack(padx=12, pady=(12, 4))
 
-        try:
+        with contextlib.suppress(Exception):
             s = ttk.Style()
             pfx = cal._style_pfx
             s.configure(pfx + ".TButton", font=("", 13, "bold"), padding=6)
-        except Exception:
-            pass
 
         current = self.get_date()
         if current:
-            try:
+            with contextlib.suppress(Exception):
                 cal.set_date(current)
-            except Exception:
-                pass
 
         ttk.Button(win, text="✔  Valider",
                    command=lambda: self._pick(cal, win)).pack(pady=(4, 12))
