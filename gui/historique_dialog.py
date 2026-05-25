@@ -85,7 +85,7 @@ class HistoriqueDialog(tk.Toplevel):
 
         tree.tag_configure("critique", foreground="#c00000")
 
-        sb = ttk.Scrollbar(frm, orient=tk.VERTICAL, command=tree.yview)
+        sb = tk.Scrollbar(frm, orient=tk.VERTICAL, command=tree.yview, width=16)
         tree.configure(yscrollcommand=sb.set)
         tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         sb.pack(side=tk.LEFT, fill=tk.Y)
@@ -104,7 +104,7 @@ class HistoriqueDialog(tk.Toplevel):
         frm = ttk.Frame(parent)
         frm.pack(padx=16, fill=tk.BOTH, expand=True)
 
-        hbar = ttk.Scrollbar(frm, orient=tk.HORIZONTAL)
+        hbar = tk.Scrollbar(frm, orient=tk.HORIZONTAL, width=16)
         hbar.pack(side=tk.BOTTOM, fill=tk.X)
 
         self._canvas = tk.Canvas(frm, bg="white",
