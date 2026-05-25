@@ -113,6 +113,28 @@ def test_recherche_exclut_archives_par_defaut(conn):
     assert "Archive" not in noms
 
 
+def test_homonymes_sont_distincts(conn):
+    pid1 = creer_patient(conn, "Dupont", "Marie", "01/01/1940")
+    pid2 = creer_patient(conn, "Dupont", "Marie", "15/06/1952")
+    assert pid1 != pid2
+    assert get_patient(conn, pid1)["date_naissance"] == "01/01/1940"
+    assert get_patient(conn, pid2)["date_naissance"] == "15/06/1952"
+
+
+def test_recherche_retourne_homonymes(conn):
+    creer_patient(conn, "Dupont", "Marie", "01/01/1940")
+    creer_patient(conn, "Dupont", "Marie", "15/06/1952")
+    res = rechercher_patients(conn, "dupont")
+    assert len(res) == 2
+    ddns = {r["date_naissance"] for r in res}
+    assert ddns == {"01/01/1940", "15/06/1952"}
+
+
+def test_ddn_absente_est_null(conn):
+    pid = creer_patient(conn, "Dupont", "Marie")
+    assert get_patient(conn, pid)["date_naissance"] is None
+
+
 # ── Évaluations ─────────────────────────────────────────────────────────────
 
 def test_creer_evaluation_brouillon(conn):
