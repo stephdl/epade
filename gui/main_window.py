@@ -220,6 +220,8 @@ class MainWindow(tk.Tk):
                    command=self._nouvelle_evaluation).pack(side=tk.LEFT, padx=(0, 6))
         ttk.Button(btn_frame, text="Ouvrir",
                    command=self._ouvrir_evaluation).pack(side=tk.LEFT, padx=(0, 6))
+        ttk.Button(btn_frame, text="Historique",
+                   command=self._ouvrir_historique).pack(side=tk.LEFT, padx=(0, 6))
         ttk.Button(btn_frame, text="Exporter PDF",
                    command=self._exporter_pdf).pack(side=tk.LEFT, padx=(0, 6))
         self._btn_suppr_eval = ttk.Button(btn_frame, text="Supprimer brouillon",
@@ -477,6 +479,15 @@ class MainWindow(tk.Tk):
         _dialog(self, "Sauvegarde réussie",
                 f"Base sauvegardée :\n{dest}",
                 buttons=["OK"], icon="info")
+
+    def _ouvrir_historique(self):
+        pid = self._selected_patient_id()
+        if pid is None:
+            messagebox.showinfo("Sélection requise",
+                                "Sélectionnez un patient dans la liste.", parent=self)
+            return
+        from gui.historique_dialog import HistoriqueDialog
+        HistoriqueDialog(self, self.conn, pid)
 
     def _exporter_pdf(self):
         eid = self._selected_eval_id()

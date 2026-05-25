@@ -152,8 +152,11 @@ class CotationForm(tk.Toplevel):
         self._inner.bind("<Configure>",
                          lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
         canvas.bind("<Configure>", lambda e: canvas.itemconfig(win, width=e.width))
-        for seq, delta in (("<MouseWheel>", -1), ("<Button-4>", -1), ("<Button-5>", 1)):
+        _seqs = ("<MouseWheel>", "<Button-4>", "<Button-5>")
+        for seq, delta in zip(_seqs, (-1, -1, 1)):
             canvas.bind_all(seq, lambda e, d=delta: canvas.yview_scroll(d, "units"))
+        self.bind("<Destroy>", lambda e: [canvas.unbind_all(s) for s in _seqs]
+                  if e.widget is self else None)
 
         self._build_header()
         ttk.Separator(self._inner).pack(fill=tk.X, pady=8)
