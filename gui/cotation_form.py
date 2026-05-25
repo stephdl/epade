@@ -1,10 +1,23 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
+import webbrowser
 from gui.datepicker import LargeDateEntry
 import db
 
 SCORE_LABELS = ["— Non renseigné —", "0 — Absent", "1 — Léger",
                 "2 — Moyen", "3 — Fort", "4 — Très fort"]
+
+_NIVEAUX = ["absent", "léger", "moyen", "fort", "très fort"]
+
+
+def score_labels(item_key):
+    criteres = db.CRITERES.get(item_key, {})
+    labels = [SCORE_LABELS[0]]
+    for score in range(5):
+        desc = criteres.get(score, "")
+        niveau = _NIVEAUX[score]
+        labels.append(f"{score} — ({niveau}) {desc}" if desc else SCORE_LABELS[score + 1])
+    return labels
 
 SECTION_BG = {"A": "#fff0f0", "B": "#f0f4ff", "C": "#f0fff4", "D": "#fffdf0"}
 
@@ -21,8 +34,12 @@ def _score_from_label(label):
     return int(label[0])
 
 
-def _label_from_score(score):
-    return SCORE_LABELS[0] if score is None else SCORE_LABELS[score + 1]
+def _label_from_score(score, item_key=None):
+    if score is None:
+        return SCORE_LABELS[0]
+    if item_key:
+        return score_labels(item_key)[score + 1]
+    return SCORE_LABELS[score + 1]
 
 
 def _match_option(value, options):
@@ -147,7 +164,16 @@ class CotationForm(tk.Toplevel):
         self._build_footer()
 
     def _build_header(self):
-        f = ttk.LabelFrame(self._inner, text="Identification", padding=10)
+        _PDF_URL = "https://www.psychoge.fr/_files/ugd/3d0eb6_fe86bd3112324bfd8d8dc27c86e44003.pdf"
+        hdr = ttk.Frame(self._inner)
+        hdr.pack(fill=tk.X, pady=(0, 2))
+        ttk.Label(hdr, text="Identification", font=("", 10, "bold")).pack(side=tk.LEFT)
+        lbl_pdf = ttk.Label(hdr, text="Document officiel ÉPADE (PDF)",
+                            foreground="#2563EB", cursor="hand2", font=("", 9))
+        lbl_pdf.pack(side=tk.RIGHT)
+        lbl_pdf.bind("<Button-1>", lambda _: webbrowser.open_new(_PDF_URL))
+
+        f = ttk.LabelFrame(self._inner, text="", padding=10)
         f.pack(fill=tk.X, pady=(0, 4))
 
         state = "disabled" if self.locked else "normal"
@@ -230,8 +256,8 @@ class CotationForm(tk.Toplevel):
 
             score_var = tk.StringVar(value=SCORE_LABELS[0])
             self._score_vars[item_key] = score_var
-            ttk.Combobox(f, textvariable=score_var, values=SCORE_LABELS,
-                         state=cb_state, width=18).grid(
+            ttk.Combobox(f, textvariable=score_var, values=score_labels(item_key),
+                         state=cb_state, width=55).grid(
                 row=i, column=1, padx=6, pady=2, sticky="w")
             if not self.locked:
                 score_var.trace_add("write", lambda *_, k=item_key: self._autosave_score(k))
@@ -301,6 +327,7 @@ class CotationForm(tk.Toplevel):
             ttk.Button(f, text="Valider et verrouiller",
                        command=self._valider).pack(side=tk.RIGHT)
 
+
     # ── Chargement ────────────────────────────────────────────────────────
 
     def _load_data(self):
@@ -321,7 +348,7 @@ class CotationForm(tk.Toplevel):
                         pass
 
         for key in db.SCORE_COLS:
-            self._score_vars[key].set(_label_from_score(ev[key]))
+            self._score_vars[key].set(_label_from_score(ev[key], item_key=key))
         for key in db.NOTE_COLS:
             item_key = key[5:]
             self._note_wdg[item_key].set(ev[key] or "")
