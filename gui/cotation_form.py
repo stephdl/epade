@@ -238,6 +238,7 @@ class CotationForm(tk.Toplevel):
         f = tk.LabelFrame(self._inner, text=f"Domaine {dom} — {nom_dom}",
                           bg=bg, padx=8, pady=6, font=("", 10, "bold"))
         f.pack(fill=tk.X, pady=3)
+        f.columnconfigure(1, weight=1)
 
         cb_state = "disabled" if self.locked else "readonly"
 
@@ -245,7 +246,7 @@ class CotationForm(tk.Toplevel):
         tk.Label(f, text="Item", bg=bg, font=("", 8, "bold"), width=36, anchor="w").grid(
             row=0, column=0, sticky="w")
         tk.Label(f, text="Score", bg=bg, font=("", 8, "bold"), width=20, anchor="w").grid(
-            row=0, column=1, padx=6)
+            row=0, column=1, padx=6, sticky="w")
         tk.Label(f, text="Note soignant", bg=bg, font=("", 8, "bold"), anchor="w").grid(
             row=0, column=2, padx=6, sticky="w")
 
@@ -261,7 +262,7 @@ class CotationForm(tk.Toplevel):
             self._score_vars[item_key] = score_var
             ttk.Combobox(f, textvariable=score_var, values=score_labels(item_key),
                          state=cb_state, width=55).grid(
-                row=i, column=1, padx=6, pady=2, sticky="w")
+                row=i, column=1, padx=6, pady=2, sticky="ew")
             if not self.locked:
                 score_var.trace_add("write", lambda *_, k=item_key: self._autosave_score(k))
 
