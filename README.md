@@ -197,9 +197,15 @@ La base de données est créée automatiquement à la première ouverture dans `
 1. **Créer un patient** — bouton `+ Nouveau` dans la colonne gauche
 2. **Modifier la fiche** — sélectionner le patient puis `Modifier` (téléphone, médecin, contact famille…)
 3. **Nouvelle évaluation** — sélectionner le patient puis `+ Nouvelle évaluation`
-4. **Remplir la cotation** — saisir soignant, période, les 16 scores (A1–D4) et les notes
-5. **Valider** — `Valider et verrouiller` : date/heure inscrite automatiquement, fiche en lecture seule
-6. **Exporter en PDF** — sélectionner une évaluation verrouillée, clic `Exporter PDF`
+4. **Remplir la cotation** — saisir soignant, période, les 16 scores (A1–D4) et les notes.
+   Chaque score affiche le critère officiel ÉPADE dans le menu déroulant
+   (`0 — (absent) Regard normal et mimique normale`, etc.)
+5. **Supprimer un brouillon** — bouton `Supprimer brouillon` dans la liste des évaluations
+   (uniquement pour les évaluations non encore verrouillées)
+6. **Historique** — sélectionner un patient puis clic `Historique` : tableau de toutes les
+   évaluations finalisées + graphique d'évolution du score total
+7. **Valider** — `Valider et verrouiller` : date/heure inscrite automatiquement, fiche en lecture seule
+8. **Exporter en PDF** — sélectionner une évaluation verrouillée, clic `Exporter PDF`
    - *Fiche complète* — tous les items, scores, notes, causes, attitudes
    - *Résumé des scores* — vue synthétique avec barres de progression
    - *Historique patient* — tableau de toutes les évaluations
@@ -285,20 +291,39 @@ La base `data/epade.db` n'est pas versionnée — elle est préservée par le `.
 ```
 epade/
 ├── main.py          # Point d'entrée
-├── db.py            # Base SQLite (schéma + toutes les fonctions)
+├── db.py            # Base SQLite (schéma + toutes les fonctions + CRITERES)
 ├── gui/
-│   ├── main_window.py    # Fenêtre principale
-│   ├── patient_form.py   # Formulaire patient (création / édition)
-│   ├── cotation_form.py  # Formulaire de cotation
-│   └── export_dialog.py  # Choix du type d'export PDF
+│   ├── main_window.py      # Fenêtre principale
+│   ├── patient_form.py     # Formulaire patient (création / édition)
+│   ├── cotation_form.py    # Formulaire de cotation
+│   ├── historique_dialog.py # Historique patient (tableau + graphique)
+│   ├── datepicker.py       # Sélecteur de date avec calendrier popup
+│   └── export_dialog.py    # Choix du type d'export PDF
 ├── export/
 │   └── pdf.py       # Génération PDF (fpdf2)
-├── tests/           # Tests pytest (base en mémoire)
+├── tests/           # 54 tests pytest (base en mémoire)
 ├── data/
 │   └── epade.db     # Base SQLite (créée au premier lancement)
 ├── install.sh       # Installe le raccourci Linux
 └── requirements.txt
 ```
+
+---
+
+## Usage multi-postes (dossier partagé)
+
+La base de données peut résider sur un dossier réseau partagé (SMB/Windows) pour
+permettre à plusieurs soignants de travailler simultanément.
+
+- Chaque soignant crée **sa propre évaluation** (`+ Nouvelle évaluation`) : les lignes
+  sont indépendantes, personne n'écrase le travail d'un autre.
+- La base est configurée en mode **WAL** (Write-Ahead Logging) : les lectures ne
+  bloquent pas les écritures et vice-versa, ce qui améliore la fiabilité en accès concurrent.
+- Limitations : SQLite reste un moteur fichier — pour un usage intensif (>10 postes
+  simultanés) ou sur un réseau instable, envisager une migration vers PostgreSQL/web.
+
+> **Conseil** : désigner un poste référent pour les sauvegardes régulières via
+> `Sauvegarder la base`.
 
 ---
 
@@ -327,6 +352,9 @@ pytest tests/
 ```
 
 Les tests utilisent une base SQLite en mémoire — aucun fichier n'est créé ou modifié.
+
+54 tests couvrent : CRUD patients/évaluations, règles de validation, génération PDF,
+configuration, intégrité des critères ÉPADE et labels des combobox.
 
 ---
 

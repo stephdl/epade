@@ -38,13 +38,14 @@ pip install fpdf2 tkcalendar pytest
 ```
 epade/
 ├── main.py                  # point d'entrée : crée la fenêtre tkinter et ouvre la DB
-├── db.py                    # toute la logique SQLite (schéma + CRUD)
+├── db.py                    # toute la logique SQLite (schéma + CRUD + CRITERES)
 ├── config.py                # lecture/écriture config.json (scaling, préférences)
 ├── version.py               # __version__ = "dev" (remplacé par le tag lors du build CI)
 ├── gui/
 │   ├── main_window.py       # fenêtre principale : liste patients + liste évaluations
 │   ├── patient_form.py      # dialog création/édition patient (dual-mode)
 │   ├── cotation_form.py     # formulaire de cotation (saisie ou lecture seule)
+│   ├── historique_dialog.py # historique patient : tableau + graphique barres empilées
 │   ├── datepicker.py        # LargeDateEntry : champ date + popup calendrier visible
 │   └── export_dialog.py     # choix du type d'export PDF
 ├── export/
@@ -53,13 +54,25 @@ epade/
 │   ├── test_db.py           # tests CRUD SQLite (base en mémoire)
 │   ├── test_validation.py   # tests des règles de validation métier
 │   ├── test_pdf.py          # tests de génération PDF
-│   └── test_config.py       # tests lecture/écriture config.json
+│   ├── test_config.py       # tests lecture/écriture config.json
+│   └── test_criteres.py     # intégrité CRITERES + score_labels() + _score_from_label()
 ├── data/
 │   └── epade.db             # base SQLite créée automatiquement au premier lancement
 ├── EPADE.desktop            # raccourci Linux
 ├── README.md                # guide d'installation
 └── install.sh               # installe dépendances + raccourci
 ```
+
+---
+
+## Données de référence db.py
+
+`CRITERES` — dictionnaire `{item_key: {score: description}}` pour les 16 items × 5 niveaux
+(0 à 4). Utilisé par `cotation_form.py` pour peupler les combobox avec le critère officiel
+ÉPADE au format `0 — (absent) Regard normal et mimique normale`.
+
+`_connect()` active `PRAGMA journal_mode=WAL` pour une meilleure robustesse en accès
+concurrent (dossier réseau partagé).
 
 ---
 
@@ -125,10 +138,11 @@ via `ALTER TABLE ADD COLUMN` — pas besoin de recréer la base.
 |---|---|
 | `creer_evaluation(conn, patient_id)` | Crée un brouillon vide |
 | `get_evaluation(conn, eval_id)` | Récupère une évaluation |
-| `get_evaluations_patient(conn, patient_id)` | Liste toutes les évaluations d'un patient |
+| `get_evaluations_patient(conn, patient_id)` | Liste toutes les évaluations d'un patient (ordre anti-chron.) |
 | `mettre_a_jour_evaluation(conn, eval_id, **champs)` | Met à jour un brouillon (lève ValueError si finalisée) |
 | `valider_champs_requis(conn, eval_id)` | Retourne la liste des champs manquants (vide = OK) |
-| `finaliser_evaluation(conn, eval_id)` | Verrouille l'évaluation (lève ValueError si champs manquants) |
+| `finaliser_evaluation(conn, eval_id)` | Verrouille l'évaluation (ValueError si déjà finalisée ou champs manquants) |
+| `supprimer_evaluation(conn, eval_id)` | Supprime un brouillon (ValueError si finalisée ou introuvable) |
 | `score_domaine(row, domaine)` | Somme des scores pour A/B/C/D |
 | `score_total(row)` | Score total sur 64 |
 
@@ -182,6 +196,8 @@ en continu — pas de bouton "Sauvegarder".
 - Colonne gauche : liste patients avec recherche temps réel, case "Archivés" pour afficher les archivés (en gris, préfixe ✕)
 - Boutons patient : `+ Nouveau` | `Modifier` | `Archiver` (devient `Restaurer` si patient archivé)
 - Colonne droite : évaluations du patient sélectionné (3 lignes par éval : statut/date/soignant, scores, ligne vide)
+- Boutons évaluation : `+ Nouvelle` | `Ouvrir` | `Historique` | `Supprimer brouillon` | `Exporter PDF`
+- `Supprimer brouillon` n'est actif que si l'évaluation sélectionnée est un brouillon (finalisee=0)
 - `exportselection=False` sur les deux Listbox — indispensable pour ne pas perdre la sélection au clic sur les boutons
 
 ### patient_form.py — Formulaire patient
@@ -190,14 +206,26 @@ Dual-mode : `PatientForm(parent, conn)` → création, `PatientForm(parent, conn
 En mode édition, bouton "Supprimer définitivement" (double confirmation).
 `result` vaut le patient_id, ou `"deleted"` après suppression.
 
+### historique_dialog.py — Historique patient
+
+`HistoriqueDialog(tk.Toplevel)` — pas de `transient()` ni `grab_set()` (sinon boutons WM non fonctionnels sur Linux).
+- `PanedWindow` vertical : tableau `ttk.Treeview` en haut, graphique `tk.Canvas` en bas
+- Tableau : colonnes date/soignant/période/A/B/C/D/total, lignes critiques (>17) en rouge
+- Graphique : barres empilées par domaine, scrollbar horizontale (BAR_SLOT=120 px/éval),
+  redessinage automatique via `<Configure>`, dates au format `JJ-MM-AAAA`
+- Évaluations affichées en ordre chronologique dans le graphe (plus ancienne à gauche)
+
 ### cotation_form.py — Formulaire de cotation
 
 - Scrollable via Canvas + ttk.Scrollbar
-- En-tête : soignant, période (LargeDateEntry), durée, date cotation (auto)
-- 4 sections A/B/C/D avec items, scores (Combobox), notes soignant (Combobox + champ libre)
+- En-tête : soignant, période (LargeDateEntry), durée, date cotation (auto) + lien PDF officiel ÉPADE
+- 4 sections A/B/C/D avec items, scores (Combobox avec critères officiels), notes soignant (Combobox + champ libre)
+- `score_labels(item_key)` retourne 6 valeurs pour la combobox : `["— Non renseigné —", "0 — (absent) …", …]`
+- `_score_from_label(label)` extrait l'entier depuis le label (ou None si non renseigné)
 - Réflexion-cause et attitude appropriée par domaine (Combobox + champ libre)
 - Score domaine et total mis à jour en temps réel
 - Mode lecture seule (finalisée) : tous les widgets `state=disabled`
+- `bind_all` scroll désactivé via `<Destroy>` pour éviter les erreurs après fermeture
 
 ### datepicker.py — LargeDateEntry
 
@@ -225,9 +253,9 @@ Polices : LiberationSans TTF (`/usr/share/fonts/liberation-sans-fonts/`) — né
 
 ---
 
-## Tests (pytest — 32 tests, base :memory:)
+## Tests (pytest — 54 tests, base :memory:)
 
-### test_db.py (15 tests)
+### test_db.py (23 tests)
 | Test | Ce qui est vérifié |
 |---|---|
 | `test_creer_et_recuperer_patient` | Création et lecture patient de base |
@@ -245,8 +273,16 @@ Polices : LiberationSans TTF (`/usr/share/fonts/liberation-sans-fonts/`) — né
 | `test_impossible_modifier_evaluation_finalisee` | ValueError si finalisee=1 |
 | `test_get_evaluations_patient` | liste les évaluations d'un patient |
 | `test_score_domaine_et_total` | calculs A=10, B=0, C=4, D=8, total=22 |
+| `test_score_total_max` | tous scores à 4 → total=64 |
+| `test_score_total_tous_zero` | tous scores à 0 → total=0 |
+| `test_score_total_avec_scores_null` | scores NULL comptent pour 0 |
+| `test_get_evaluations_patient_ordre_desc` | éval la plus récente en premier |
+| `test_get_patient_inexistant_retourne_none` | get_patient(99999) → None |
+| `test_supprimer_evaluation_brouillon` | DELETE brouillon → get_evaluation → None |
+| `test_supprimer_evaluation_finalisee_interdit` | ValueError si finalisée |
+| `test_supprimer_evaluation_inexistante` | ValueError si id inconnu |
 
-### test_validation.py (8 tests)
+### test_validation.py (11 tests)
 | Test | Ce qui est vérifié |
 |---|---|
 | `test_validation_refusee_soignant_vide` | soignant vide bloque la validation |
@@ -256,6 +292,9 @@ Polices : LiberationSans TTF (`/usr/share/fonts/liberation-sans-fonts/`) — né
 | `test_validation_acceptee_si_tout_rempli` | liste vide = OK |
 | `test_liste_exacte_des_champs_manquants` | 3 + 14 champs = 17 manquants précis |
 | `test_finaliser_verrouille_definitivement` | ValueError après finalisation |
+| `test_score_zero_est_valide` | score 0 n'est pas un champ manquant |
+| `test_score_quatre_est_valide` | score 4 est la valeur max valide |
+| `test_double_finalisation_interdit` | finaliser deux fois → ValueError |
 | `test_finaliser_leve_erreur_si_incomplet` | ValueError si champs manquants |
 
 ### test_pdf.py (4 tests)
@@ -274,6 +313,21 @@ Polices : LiberationSans TTF (`/usr/share/fonts/liberation-sans-fonts/`) — né
 | `test_save_merge_avec_existant` | save fusionne avec les clés existantes |
 | `test_save_ecrase_valeur_existante` | save remplace une valeur existante |
 | `test_load_fichier_corrompu_retourne_defaults` | JSON invalide → defaults |
+
+### test_criteres.py (11 tests)
+| Test | Ce qui est vérifié |
+|---|---|
+| `test_criteres_contient_tous_les_items` | CRITERES couvre les 16 items |
+| `test_criteres_cinq_niveaux_par_item` | niveaux {0,1,2,3,4} par item |
+| `test_criteres_aucune_description_vide` | aucune description vide ou whitespace |
+| `test_criteres_descriptions_sont_des_chaines` | toutes les valeurs sont des str |
+| `test_score_labels_retourne_six_elements` | score_labels() → 6 éléments |
+| `test_score_labels_premier_element_non_renseigne` | labels[0] == SCORE_LABELS[0] |
+| `test_score_labels_contient_le_score` | label[i+1] commence par str(i) |
+| `test_score_labels_contient_la_description` | description CRITERES présente dans le label |
+| `test_score_from_label_non_renseigne` | _score_from_label("— Non renseigné —") → None |
+| `test_score_from_label_vide` | "" et None → None |
+| `test_score_from_label_extrait_entier` | extrait 0–4 pour tous items × niveaux |
 
 ---
 
