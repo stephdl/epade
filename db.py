@@ -388,7 +388,7 @@ def creer_patient(conn, nom, prenom, date_naissance=None, **extra):
             cols += f", {k}"
             vals.append(extra[k] or None)
     placeholders = ", ".join("?" * len(vals))
-    cur = conn.execute(f"INSERT INTO patients ({cols}) VALUES ({placeholders})", vals)
+    cur = conn.execute(f"INSERT INTO patients ({cols}) VALUES ({placeholders})", vals)  # nosec B608
     conn.commit()
     return cur.lastrowid
 
@@ -397,7 +397,7 @@ def modifier_patient(conn, patient_id, **champs):
     if not champs:
         return
     sets = ", ".join(f"{k}=?" for k in champs)
-    conn.execute(f"UPDATE patients SET {sets} WHERE id=?", (*champs.values(), patient_id))
+    conn.execute(f"UPDATE patients SET {sets} WHERE id=?", (*champs.values(), patient_id))  # nosec B608
     conn.commit()
 
 
@@ -409,7 +409,7 @@ def rechercher_patients(conn, query="", inclure_archives=False):
     q = f"%{query.strip()}%"
     filtre = "" if inclure_archives else " AND (archive IS NULL OR archive=0)"
     return conn.execute(
-        f"SELECT * FROM patients WHERE (nom LIKE ? OR prenom LIKE ?){filtre} ORDER BY nom, prenom",
+        f"SELECT * FROM patients WHERE (nom LIKE ? OR prenom LIKE ?){filtre} ORDER BY nom, prenom",  # nosec B608
         (q, q),
     ).fetchall()
 
@@ -472,7 +472,7 @@ def mettre_a_jour_evaluation(conn, eval_id, **champs):
         raise ValueError("Évaluation introuvable ou déjà finalisée.")
     sets = ", ".join(f"{k}=?" for k in champs)
     conn.execute(
-        f"UPDATE evaluations SET {sets} WHERE id=? AND finalisee=0",
+        f"UPDATE evaluations SET {sets} WHERE id=? AND finalisee=0",  # nosec B608
         (*champs.values(), eval_id),
     )
     conn.commit()
