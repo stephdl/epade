@@ -304,6 +304,8 @@ epade/
 ├── tests/           # 54 tests pytest (base en mémoire)
 ├── data/
 │   └── epade.db     # Base SQLite (créée au premier lancement)
+├── backup.py        # Sauvegarde automatique (cron / Planificateur Windows)
+├── backup.bat       # Wrapper Windows pour le Planificateur de tâches
 ├── install.sh       # Installe le raccourci Linux
 └── requirements.txt
 ```
@@ -331,17 +333,70 @@ permettre à plusieurs soignants de travailler simultanément.
 
 La base de données est un fichier unique : `data/epade.db`
 
-**Depuis l'interface** (recommandé) : boutons `Sauvegarder la base` et `Restaurer la base`
+**Depuis l'interface** (ponctuel) : boutons `Sauvegarder la base` et `Restaurer la base`
 en haut à droite de la fenêtre principale.
 
-**Manuellement** (Linux) :
-```bash
-# Sauvegarde
-cp data/epade.db ~/Sauvegardes/epade_$(date +%Y%m%d).db
+---
 
-# Restauration (application fermée)
-cp ~/Sauvegardes/epade_20260523.db data/epade.db
+## Sauvegarde automatique (script)
+
+Le script `backup.py` copie la base avec un horodatage et supprime les plus anciennes
+copies au-delà du nombre souhaité. Il ne nécessite aucune dépendance Python externe.
+
+### Lancement manuel
+
+```bash
+# Destination locale (défaut : ./sauvegardes/)
+python backup.py
+
+# Destination personnalisée + rotation sur 31 jours
+python backup.py --dest /mnt/nas/epade/sauvegardes --keep 31
+
+# Chemin réseau Windows
+python backup.py --dest "\\serveur\partage\epade\sauvegardes" --keep 31
 ```
+
+### Linux — cron (toutes les nuits à 02h00)
+
+```bash
+crontab -e
+```
+
+Ajouter la ligne :
+
+```
+0 2 * * * /usr/bin/python3 /chemin/vers/epade/backup.py --dest /chemin/vers/epade/sauvegardes --keep 31 >> /var/log/epade_backup.log 2>&1
+```
+
+Pour une destination réseau NAS :
+
+```
+0 2 * * * /usr/bin/python3 /chemin/vers/epade/backup.py --dest /mnt/nas/epade/sauvegardes --keep 31 >> /var/log/epade_backup.log 2>&1
+```
+
+### Windows — Planificateur de tâches
+
+Le fichier `backup.bat` est prêt à l'emploi. Ouvrir le fichier pour ajuster
+`--dest` si besoin (réseau ou lettre de lecteur).
+
+**Configuration du Planificateur :**
+
+1. Ouvrir **Planificateur de tâches** (menu Démarrer → rechercher "planificateur")
+2. **Créer une tâche de base**
+3. Déclencheur : **Tous les jours** à **02:00**
+4. Action : **Démarrer un programme** → pointer sur `backup.bat`
+5. Cocher **Exécuter même si l'utilisateur n'est pas connecté**
+6. Les logs s'accumulent dans `sauvegardes\backup.log`
+
+Pour une destination réseau (dossier partagé) : modifier `backup.bat` :
+
+```bat
+python "%~dp0backup.py" --dest "\\serveur\partage\epade\sauvegardes" --keep 31 >> ...
+```
+
+> **Règle des 3-2-1** : idéalement 3 copies, sur 2 supports différents, dont 1 hors site
+> (NAS réseau, cloud). Le script gère la rotation locale ; pour une copie distante,
+> combiner avec rclone (OneDrive, Nextcloud…) ou Robocopy vers un partage réseau.
 
 ---
 
