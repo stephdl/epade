@@ -5,7 +5,7 @@ from db import (
     archiver_patient, restaurer_patient, supprimer_patient,
     creer_evaluation, get_evaluation, get_evaluations_patient,
     mettre_a_jour_evaluation, valider_champs_requis, finaliser_evaluation,
-    score_domaine, score_total, SCORE_COLS,
+    supprimer_evaluation, score_domaine, score_total, SCORE_COLS,
 )
 
 
@@ -176,3 +176,74 @@ def test_score_domaine_et_total(conn):
     assert score_domaine(ev, "C") == 4
     assert score_domaine(ev, "D") == 8
     assert score_total(ev) == 22
+
+
+def test_score_total_max(conn):
+    pid = creer_patient(conn, "Dupont", "Marie")
+    eid = creer_evaluation(conn, pid)
+    mettre_a_jour_evaluation(conn, eid, **{col: 4 for col in SCORE_COLS})
+    ev = get_evaluation(conn, eid)
+    assert score_total(ev) == 64
+
+
+def test_score_total_tous_zero(conn):
+    pid = creer_patient(conn, "Dupont", "Marie")
+    eid = creer_evaluation(conn, pid)
+    mettre_a_jour_evaluation(conn, eid, **{col: 0 for col in SCORE_COLS})
+    ev = get_evaluation(conn, eid)
+    assert score_total(ev) == 0
+
+
+def test_score_total_avec_scores_null(conn):
+    pid = creer_patient(conn, "Dupont", "Marie")
+    eid = creer_evaluation(conn, pid)
+    # scores NULL comptent pour 0
+    ev = get_evaluation(conn, eid)
+    assert score_total(ev) == 0
+    assert score_domaine(ev, "A") == 0
+
+
+def test_get_evaluations_patient_ordre_desc(conn):
+    pid = creer_patient(conn, "Dupont", "Marie")
+    eid1 = creer_evaluation(conn, pid)
+    eid2 = creer_evaluation(conn, pid)
+    champs = {"soignant": "X", "periode_du": "2026-01-01", "periode_au": "2026-01-07"}
+    champs.update({col: 1 for col in SCORE_COLS})
+    mettre_a_jour_evaluation(conn, eid1, **{**champs})
+    finaliser_evaluation(conn, eid1)
+    mettre_a_jour_evaluation(conn, eid2, **{**champs, "periode_du": "2026-03-01",
+                                            "periode_au": "2026-03-07"})
+    finaliser_evaluation(conn, eid2)
+    evs = get_evaluations_patient(conn, pid)
+    # Le plus récent (eid2) doit être en premier
+    assert evs[0]["id"] == eid2
+    assert evs[1]["id"] == eid1
+
+
+def test_get_patient_inexistant_retourne_none(conn):
+    assert get_patient(conn, 99999) is None
+
+
+# ── Suppression brouillon ────────────────────────────────────────────────────
+
+def test_supprimer_evaluation_brouillon(conn):
+    pid = creer_patient(conn, "Dupont", "Marie")
+    eid = creer_evaluation(conn, pid)
+    supprimer_evaluation(conn, eid)
+    assert get_evaluation(conn, eid) is None
+
+
+def test_supprimer_evaluation_finalisee_interdit(conn):
+    pid = creer_patient(conn, "Dupont", "Marie")
+    eid = creer_evaluation(conn, pid)
+    champs = {"soignant": "Martin", "periode_du": "2026-05-01", "periode_au": "2026-05-07"}
+    champs.update({col: 2 for col in SCORE_COLS})
+    mettre_a_jour_evaluation(conn, eid, **champs)
+    finaliser_evaluation(conn, eid)
+    with pytest.raises(ValueError):
+        supprimer_evaluation(conn, eid)
+
+
+def test_supprimer_evaluation_inexistante(conn):
+    with pytest.raises(ValueError):
+        supprimer_evaluation(conn, 99999)

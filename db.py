@@ -496,13 +496,18 @@ def valider_champs_requis(conn, eval_id):
 
 
 def finaliser_evaluation(conn, eval_id):
-    """Verrouille l'évaluation. Lève ValueError si des champs manquent."""
+    """Verrouille l'évaluation. Lève ValueError si déjà finalisée ou champs manquants."""
+    row = conn.execute("SELECT finalisee FROM evaluations WHERE id=?", (eval_id,)).fetchone()
+    if row is None:
+        raise ValueError("Évaluation introuvable.")
+    if row["finalisee"] == 1:
+        raise ValueError("Cette évaluation est déjà finalisée.")
     manquants = valider_champs_requis(conn, eval_id)
     if manquants:
         raise ValueError("Champs manquants :\n• " + "\n• ".join(manquants))
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     conn.execute(
-        "UPDATE evaluations SET finalisee=1, date_cotation=? WHERE id=? AND finalisee=0",
+        "UPDATE evaluations SET finalisee=1, date_cotation=? WHERE id=?",
         (now, eval_id),
     )
     conn.commit()

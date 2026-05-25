@@ -85,6 +85,33 @@ def test_finaliser_verrouille_definitivement(eval_vide):
         mettre_a_jour_evaluation(conn, eid, soignant="Nouveau")
 
 
+def test_score_zero_est_valide(eval_vide):
+    """Score 0 (absent) est une valeur valide, pas un champ manquant."""
+    conn, eid = eval_vide
+    champs = {"soignant": "Martin", "periode_du": "2026-05-01", "periode_au": "2026-05-07"}
+    champs.update({col: 0 for col in SCORE_COLS})
+    mettre_a_jour_evaluation(conn, eid, **champs)
+    assert valider_champs_requis(conn, eid) == []
+
+
+def test_score_quatre_est_valide(eval_vide):
+    """Score 4 (très fort) est la valeur maximale valide."""
+    conn, eid = eval_vide
+    champs = {"soignant": "Martin", "periode_du": "2026-05-01", "periode_au": "2026-05-07"}
+    champs.update({col: 4 for col in SCORE_COLS})
+    mettre_a_jour_evaluation(conn, eid, **champs)
+    assert valider_champs_requis(conn, eid) == []
+
+
+def test_double_finalisation_interdit(eval_vide):
+    """Finaliser une évaluation déjà finalisée lève ValueError."""
+    conn, eid = eval_vide
+    _remplir_tout(conn, eid)
+    finaliser_evaluation(conn, eid)
+    with pytest.raises(ValueError):
+        finaliser_evaluation(conn, eid)
+
+
 def test_finaliser_leve_erreur_si_incomplet(eval_vide):
     conn, eid = eval_vide
     with pytest.raises(ValueError):
