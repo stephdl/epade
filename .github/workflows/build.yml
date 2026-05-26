@@ -44,6 +44,9 @@ jobs:
     runs-on: ubuntu-latest
     container: rockylinux/rockylinux:9
     steps:
+      - name: Installer git
+        run: dnf install -y git
+
       - uses: actions/checkout@v6
 
       - name: Installer Python 3.12 et tkinter
