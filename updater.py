@@ -29,7 +29,7 @@ def check_update_async(current_version: str, callback):
                     "User-Agent": "epade-app",
                 },
             )
-            with urllib.request.urlopen(req, timeout=5) as resp:
+            with urllib.request.urlopen(req, timeout=5) as resp:  # nosec B310 — URL HTTPS constante
                 data = json.loads(resp.read())
             latest_tag = data.get("tag_name", "")
             if latest_tag and _parse_version(latest_tag) > _parse_version(current_version):
