@@ -4,6 +4,7 @@ from tkinter import ttk, messagebox, font as tkfont
 import webbrowser
 import db
 import config
+import updater
 from gui.patient_form import PatientForm
 
 
@@ -103,6 +104,13 @@ class MainWindow(tk.Tk):
         self._build()
         self._apply_scaling(scaling)
         self._refresh_patients()
+        updater.check_update_async(version, self._on_update_available)
+
+    def _on_update_available(self, tag: str, url: str):
+        def _show():
+            self._lbl_update.configure(text=f"Mise a jour disponible : {tag}")
+            self._lbl_update.bind("<Button-1>", lambda _: webbrowser.open_new(url))
+        self.after(0, _show)
 
     def _init_fonts(self):
         self._font_title = tkfont.Font(family="", size=_BASE_SIZES["title"], weight="bold")
@@ -135,6 +143,10 @@ class MainWindow(tk.Tk):
                   font=self._font_title).pack(anchor="w")
         ttk.Label(lbl_frame, text=self._version,
                   font=self._font_footer, foreground="gray").pack(anchor="w")
+        self._lbl_update = ttk.Label(lbl_frame, text="",
+                                     foreground="#DC2626", cursor="hand2",
+                                     font=self._font_footer)
+        self._lbl_update.pack(anchor="w")
         ttk.Button(top, text="Parametres",
                    command=self._ouvrir_parametres).pack(side=tk.RIGHT, padx=(6, 0))
         ttk.Button(top, text="Sauvegarder la base",
