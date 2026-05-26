@@ -72,6 +72,7 @@ chmod +x ~/EPADE/EPADE-linux-x86_64
 La base de données `data/epade.db` est créée automatiquement à côté du binaire.
 
 > **Aucune installation de Python n'est requise** — tout est embarqué dans le binaire.
+> Compatible avec Ubuntu 22.04+, Rocky/AlmaLinux 9+, Debian 12+, Fedora 37+ et toute distribution Linux récente.
 
 ---
 

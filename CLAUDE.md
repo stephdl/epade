@@ -7,6 +7,25 @@ des Personnes Âgées — Symptômes et Syndromes DÉconcertants / PGI-DSS). Rem
 Excel fragile. Chaque évaluation est verrouillée définitivement après validation, l'historique
 est immuable.
 
+## Build CI/CD
+
+### Binaire Linux
+
+Le build Linux utilise un container **`rockylinux/rockylinux:9`** avec **Python 3.12** (via `dnf`).
+
+Raison : Rocky Linux 9 embarque GLIBC 2.34, ce qui permet au binaire produit de tourner sur
+toutes les distributions Linux modernes (Ubuntu 22.04+, Rocky/AlmaLinux 9+, Debian 12+,
+Fedora 37+). Compiler sur un système plus récent (ex. Ubuntu 24.04 + Python 3.14) produisait
+un binaire nécessitant GLIBC 2.38, incompatible avec Ubuntu 22.04 et Rocky Linux 9.
+
+Le container n'ayant pas `git` par défaut, `dnf install -y git` est fait avant `actions/checkout`.
+
+### Binaire Windows
+
+Build sur `windows-latest` avec Python 3.14 — pas de contrainte GLIBC sur Windows.
+
+---
+
 ## Lancer l'application
 
 ```bash
