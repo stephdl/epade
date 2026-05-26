@@ -42,18 +42,18 @@ jobs:
 
   build-linux:
     runs-on: ubuntu-latest
+    container: rockylinux/rockylinux:9
     steps:
+      - name: Installer git
+        run: dnf install -y git
+
       - uses: actions/checkout@v6
 
-      - name: Installer tkinter
-        run: sudo apt-get install -y python3-tk
+      - name: Installer Python 3.12 et tkinter
+        run: dnf install -y python3.12 python3.12-pip python3.12-tkinter
 
-      - uses: actions/setup-python@v6
-        with:
-          python-version: "3.11"
-
-      - name: Installer les dépendances
-        run: pip install pyinstaller fpdf2 tkcalendar
+      - name: Installer les dépendances Python
+        run: python3.12 -m pip install --upgrade pip && python3.12 -m pip install pyinstaller fpdf2 tkcalendar
 
       - name: Injecter la version
         run: |
@@ -62,7 +62,7 @@ jobs:
 
       - name: Construire le binaire
         run: |
-          pyinstaller --onefile --windowed --name EPADE \
+          python3.12 -m PyInstaller --onefile --windowed --name EPADE \
             --add-data "assets/fonts:assets/fonts" \
             --icon "assets/epade.ico" \
             main.py
