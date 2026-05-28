@@ -19,7 +19,8 @@ def conn():
 def eval_finalisee(conn):
     pid = creer_patient(conn, "Dupont", "Marie", "01/01/1940")
     eid = creer_evaluation(conn, pid)
-    champs = {"soignant": "Martin Lucie", "periode_du": "2026-05-01", "periode_au": "2026-05-07",
+    champs = {"referent": "Martin Lucie", "role_referent": "IDEC",
+              "periode_du": "2026-05-01", "periode_au": "2026-05-07",
               "duree": "15 min"}
     champs.update({col: 2 for col in SCORE_COLS})
     champs["a1"] = 4

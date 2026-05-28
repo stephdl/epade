@@ -17,7 +17,8 @@ def conn():
 
 def _eval_complete(conn, eval_id):
     """Remplit tous les champs requis d'une évaluation."""
-    champs = {"soignant": "Martin", "periode_du": "2026-05-01", "periode_au": "2026-05-07"}
+    champs = {"referent": "Martin", "role_referent": "IDE",
+              "periode_du": "2026-05-01", "periode_au": "2026-05-07"}
     champs.update({col: 2 for col in SCORE_COLS})
     mettre_a_jour_evaluation(conn, eval_id, **champs)
 
@@ -228,7 +229,8 @@ def test_get_evaluations_patient_ordre_desc(conn):
     pid = creer_patient(conn, "Dupont", "Marie")
     eid1 = creer_evaluation(conn, pid)
     eid2 = creer_evaluation(conn, pid)
-    champs = {"soignant": "X", "periode_du": "2026-01-01", "periode_au": "2026-01-07"}
+    champs = {"referent": "X", "role_referent": "IDE",
+              "periode_du": "2026-01-01", "periode_au": "2026-01-07"}
     champs.update({col: 1 for col in SCORE_COLS})
     mettre_a_jour_evaluation(conn, eid1, **{**champs})
     finaliser_evaluation(conn, eid1)
@@ -257,7 +259,8 @@ def test_supprimer_evaluation_brouillon(conn):
 def test_supprimer_evaluation_finalisee_interdit(conn):
     pid = creer_patient(conn, "Dupont", "Marie")
     eid = creer_evaluation(conn, pid)
-    champs = {"soignant": "Martin", "periode_du": "2026-05-01", "periode_au": "2026-05-07"}
+    champs = {"referent": "Martin", "role_referent": "IDE",
+              "periode_du": "2026-05-01", "periode_au": "2026-05-07"}
     champs.update({col: 2 for col in SCORE_COLS})
     mettre_a_jour_evaluation(conn, eid, **champs)
     finaliser_evaluation(conn, eid)

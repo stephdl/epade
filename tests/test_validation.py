@@ -21,18 +21,30 @@ def eval_vide(conn):
 
 
 def _remplir_tout(conn, eid):
-    champs = {"soignant": "Martin", "periode_du": "2026-05-01", "periode_au": "2026-05-07"}
+    champs = {"referent": "Martin", "role_referent": "IDEC",
+              "periode_du": "2026-05-01", "periode_au": "2026-05-07"}
     champs.update({col: 1 for col in SCORE_COLS})
     mettre_a_jour_evaluation(conn, eid, **champs)
 
 
-def test_validation_refusee_soignant_vide(eval_vide):
+def test_validation_refusee_referent_vide(eval_vide):
     conn, eid = eval_vide
-    mettre_a_jour_evaluation(conn, eid, periode_du="2026-05-01", periode_au="2026-05-07")
+    mettre_a_jour_evaluation(conn, eid, role_referent="IDEC",
+                             periode_du="2026-05-01", periode_au="2026-05-07")
     mettre_a_jour_evaluation(conn, eid, **{col: 1 for col in SCORE_COLS})
     manquants = valider_champs_requis(conn, eid)
     noms = [m.lower() for m in manquants]
-    assert any("soignant" in m for m in noms)
+    assert any("référent (nom)" in m for m in noms)
+
+
+def test_validation_refusee_role_referent_vide(eval_vide):
+    conn, eid = eval_vide
+    mettre_a_jour_evaluation(conn, eid, referent="Martin",
+                             periode_du="2026-05-01", periode_au="2026-05-07")
+    mettre_a_jour_evaluation(conn, eid, **{col: 1 for col in SCORE_COLS})
+    manquants = valider_champs_requis(conn, eid)
+    noms = [m.lower() for m in manquants]
+    assert any("référent (rôle)" in m for m in noms)
 
 
 def test_validation_refusee_periode_du_manquante(eval_vide):
@@ -70,11 +82,12 @@ def test_liste_exacte_des_champs_manquants(eval_vide):
     # Rien de rempli sauf quelques scores
     mettre_a_jour_evaluation(conn, eid, a1=2, a2=1)
     manquants = valider_champs_requis(conn, eid)
-    # Doit signaler soignant, periode_du, periode_au, et les 14 scores manquants
-    assert any("Soignant" in m for m in manquants)
+    # Doit signaler référent nom, référent rôle, periode_du, periode_au, et les 14 scores manquants
+    assert any("Référent (nom)" in m for m in manquants)
+    assert any("Référent (rôle)" in m for m in manquants)
     assert any("début" in m for m in manquants)
     assert any("fin" in m for m in manquants)
-    assert len(manquants) == 3 + 14  # soignant + 2 périodes + 14 scores
+    assert len(manquants) == 2 + 2 + 14  # référent nom + référent rôle + 2 périodes + 14 scores
 
 
 def test_finaliser_verrouille_definitivement(eval_vide):
@@ -82,13 +95,14 @@ def test_finaliser_verrouille_definitivement(eval_vide):
     _remplir_tout(conn, eid)
     finaliser_evaluation(conn, eid)
     with pytest.raises(ValueError):
-        mettre_a_jour_evaluation(conn, eid, soignant="Nouveau")
+        mettre_a_jour_evaluation(conn, eid, referent="Nouveau")
 
 
 def test_score_zero_est_valide(eval_vide):
     """Score 0 (absent) est une valeur valide, pas un champ manquant."""
     conn, eid = eval_vide
-    champs = {"soignant": "Martin", "periode_du": "2026-05-01", "periode_au": "2026-05-07"}
+    champs = {"referent": "Martin", "role_referent": "IDEC",
+              "periode_du": "2026-05-01", "periode_au": "2026-05-07"}
     champs.update({col: 0 for col in SCORE_COLS})
     mettre_a_jour_evaluation(conn, eid, **champs)
     assert valider_champs_requis(conn, eid) == []
@@ -97,7 +111,8 @@ def test_score_zero_est_valide(eval_vide):
 def test_score_quatre_est_valide(eval_vide):
     """Score 4 (très fort) est la valeur maximale valide."""
     conn, eid = eval_vide
-    champs = {"soignant": "Martin", "periode_du": "2026-05-01", "periode_au": "2026-05-07"}
+    champs = {"referent": "Martin", "role_referent": "IDEC",
+              "periode_du": "2026-05-01", "periode_au": "2026-05-07"}
     champs.update({col: 4 for col in SCORE_COLS})
     mettre_a_jour_evaluation(conn, eid, **champs)
     assert valider_champs_requis(conn, eid) == []

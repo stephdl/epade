@@ -24,8 +24,20 @@ SECTION_BG = {"A": "#fff0f0", "B": "#f0f4ff", "C": "#f0fff4", "D": "#fffdf0"}
 
 AUTRE_MARKER = "Autre (champ libre)"
 
+ROLES_REFERENT = ["Médecin coordonateur", "Médecin traitant", "IDEC", "IDE"]
+PARTICIPANTS_FIXES = [
+    ("MT",   "participant_mt"),
+    ("MCO",  "participant_mco"),
+    ("IDEC", "participant_idec"),
+    ("IDE",  "participant_ide"),
+    ("AS",   "participant_as"),
+    ("ASH",  "participant_ash"),
+]
+
 # Alias pour repérer les "Autre..." dans les listes
-def _is_autre(val):
+def _is_autre(val, autre_label=None):
+    if autre_label is not None:
+        return val == autre_label
     return val and "champ libre" in val.lower()
 
 
@@ -83,13 +95,19 @@ class _SmartCombobox(ttk.Combobox):
 class _DropdownLibre(ttk.Frame):
     """Combobox + Entry pour champ libre (visible si 'Autre...' sélectionné)."""
 
-    def __init__(self, parent, choices, state="readonly", on_change=None, **kw):
+    def __init__(self, parent, choices, state="readonly", on_change=None,
+                 autre_label=None, include_vide=True, **kw):
         super().__init__(parent, **kw)
         self.columnconfigure(0, weight=1)
-        self._choices = [_VIDE] + list(choices)  # NB: ne pas nommer _options — collision avec ttk interne
+        self._autre_label = autre_label  # None = comportement original (détection par "champ libre")
+        if include_vide:
+            self._choices = [_VIDE] + list(choices)
+        else:
+            self._choices = list(choices)
         self._on_change = on_change
 
-        self._var = tk.StringVar(value=_VIDE)
+        default_val = _VIDE if include_vide else (self._choices[0] if self._choices else "")
+        self._var = tk.StringVar(value=default_val)
         self._cb = _SmartCombobox(self, textvariable=self._var, values=self._choices,
                                   state=state, width=42)
         self._cb.grid(row=0, column=0, sticky="ew")
@@ -101,9 +119,12 @@ class _DropdownLibre(ttk.Frame):
         self._var.trace_add("write", self._on_select)
         self._libre_var.trace_add("write", self._on_libre_change)
 
+    def _is_autre_val(self, val):
+        return _is_autre(val, self._autre_label)
+
     def _on_select(self, *_):
         val = self._var.get()
-        if _is_autre(val):
+        if self._is_autre_val(val):
             self._libre.grid(row=0, column=1, padx=(6, 0))
         else:
             self._libre.grid_remove()
@@ -120,14 +141,14 @@ class _DropdownLibre(ttk.Frame):
         val = self._var.get()
         if not val or val == _VIDE:
             return ""
-        if _is_autre(val):
+        if self._is_autre_val(val):
             return self._libre_var.get().strip()
         return val
 
     def set(self, value):
         """Charge une valeur : sélectionne dans la liste ou 'Autre...' + texte libre."""
         if not value:
-            self._var.set(_VIDE)
+            self._var.set(_VIDE if _VIDE in self._choices else (self._choices[0] if self._choices else ""))
             self._libre_var.set("")
             self._libre.grid_remove()
             return
@@ -135,7 +156,7 @@ class _DropdownLibre(ttk.Frame):
         if match:
             self._var.set(match)
         else:
-            autre_opt = next((o for o in self._choices if _is_autre(o)), None)
+            autre_opt = next((o for o in self._choices if self._is_autre_val(o)), None)
             if autre_opt:
                 self._var.set(autre_opt)
                 self._libre_var.set(value)
@@ -170,6 +191,10 @@ class CotationForm(tk.Toplevel):
         self._cause_wdg   = {}   # _DropdownLibre par domaine
         self._attitude_wdg = {}  # _DropdownLibre par domaine
         self._score_dom_vars = {}
+        self._role_referent_wdg = None
+        self._referent_var = None
+        self._participant_vars = {}
+        self._participant_libre_var = None
 
         self._build()
         self._load_data()
@@ -243,6 +268,7 @@ class CotationForm(tk.Toplevel):
         f.pack(fill=tk.X, pady=(0, 4))
 
         state = "disabled" if self.locked else "normal"
+        cb_state = "disabled" if self.locked else "readonly"
         pad = {"padx": (0, 8), "pady": 4}
 
         # Patient
@@ -252,18 +278,56 @@ class CotationForm(tk.Toplevel):
         ttk.Label(f, text=f"{nom}  {ddn}", font=("", 10, "bold")).grid(
             row=0, column=1, columnspan=3, sticky="w", pady=4)
 
-        # Soignant
-        ttk.Label(f, text="Soignant * :").grid(row=1, column=0, sticky="w", **pad)
-        self._soignant_var = tk.StringVar()
-        ttk.Entry(f, textvariable=self._soignant_var, state=state, width=32).grid(
-            row=1, column=1, sticky="w", pady=4)
-        if not self.locked:
-            self._soignant_var.trace_add("write", lambda *_: self._autosave_header())
+        # Référent (row 1) : rôle (dropdown) + nom (entry)
+        ttk.Label(f, text="Référent * :").grid(row=1, column=0, sticky="w", **pad)
+        ref_frame = ttk.Frame(f)
+        ref_frame.grid(row=1, column=1, columnspan=3, sticky="w", pady=4)
 
-        # Période
-        ttk.Label(f, text="Période * :").grid(row=2, column=0, sticky="w", **pad)
+        self._role_referent_wdg = _DropdownLibre(
+            ref_frame,
+            ROLES_REFERENT,
+            state=cb_state,
+            on_change=self._autosave_header,
+            autre_label="Saisie libre",
+            include_vide=False,
+        )
+        self._role_referent_wdg._cb.configure(width=28)
+        self._role_referent_wdg.pack(side=tk.LEFT)
+        if self.locked:
+            self._role_referent_wdg.disable()
+
+        ttk.Label(ref_frame, text="  Nom :").pack(side=tk.LEFT)
+        self._referent_var = tk.StringVar()
+        ttk.Entry(ref_frame, textvariable=self._referent_var, state=state, width=28).pack(
+            side=tk.LEFT, padx=(4, 0))
+        if not self.locked:
+            self._referent_var.trace_add("write", lambda *_: self._autosave_header())
+
+        # Participants (row 2)
+        ttk.Label(f, text="Participants :").grid(row=2, column=0, sticky="w", **pad)
+        part_frame = ttk.Frame(f)
+        part_frame.grid(row=2, column=1, columnspan=3, sticky="w", pady=4)
+
+        self._participant_vars = {}
+        for label, col in PARTICIPANTS_FIXES:
+            var = tk.BooleanVar()
+            self._participant_vars[col] = var
+            cb = ttk.Checkbutton(part_frame, text=label, variable=var,
+                                 state=state)
+            cb.pack(side=tk.LEFT, padx=(0, 6))
+            if not self.locked:
+                var.trace_add("write", lambda *_: self._autosave_header())
+
+        self._participant_libre_var = tk.StringVar()
+        ttk.Entry(part_frame, textvariable=self._participant_libre_var,
+                  state=state, width=18).pack(side=tk.LEFT, padx=(8, 0))
+        if not self.locked:
+            self._participant_libre_var.trace_add("write", lambda *_: self._autosave_header())
+
+        # Période (row 3)
+        ttk.Label(f, text="Période * :").grid(row=3, column=0, sticky="w", **pad)
         pf = ttk.Frame(f)
-        pf.grid(row=2, column=1, columnspan=3, sticky="w", pady=4)
+        pf.grid(row=3, column=1, columnspan=3, sticky="w", pady=4)
         ttk.Label(pf, text="Du").pack(side=tk.LEFT, padx=(0, 4))
 
         if self.locked:
@@ -279,19 +343,19 @@ class CotationForm(tk.Toplevel):
             self._au_entry = LargeDateEntry(pf, on_change=self._on_au_change)
             self._au_entry.pack(side=tk.LEFT)
 
-        # Durée
-        ttk.Label(f, text="Durée :").grid(row=3, column=0, sticky="w", **pad)
+        # Durée (row 4)
+        ttk.Label(f, text="Durée :").grid(row=4, column=0, sticky="w", **pad)
         self._duree_var = tk.StringVar()
         ttk.Entry(f, textvariable=self._duree_var, state=state, width=22).grid(
-            row=3, column=1, sticky="w", pady=4)
+            row=4, column=1, sticky="w", pady=4)
         if not self.locked:
             self._duree_var.trace_add("write", lambda *_: self._autosave_header())
 
-        # Date cotation
-        ttk.Label(f, text="Date de cotation :").grid(row=4, column=0, sticky="w", **pad)
+        # Date cotation (row 5)
+        ttk.Label(f, text="Date de cotation :").grid(row=5, column=0, sticky="w", **pad)
         date_txt = self.ev["date_cotation"] or "— sera remplie automatiquement à la validation —"
         ttk.Label(f, text=date_txt, foreground="gray").grid(
-            row=4, column=1, columnspan=3, sticky="w", pady=4)
+            row=5, column=1, columnspan=3, sticky="w", pady=4)
 
     def _build_domaine(self, dom):
         nom_dom, items = db.DOMAINES[dom]
@@ -400,7 +464,13 @@ class CotationForm(tk.Toplevel):
 
     def _load_data(self):
         ev = self.ev
-        self._soignant_var.set(ev["soignant"] or "")
+        # Référent
+        self._role_referent_wdg.set(ev["role_referent"] or "")
+        self._referent_var.set(ev["referent"] or "")
+        # Participants
+        for label, col in PARTICIPANTS_FIXES:
+            self._participant_vars[col].set(bool(ev[col]))
+        self._participant_libre_var.set(ev["participant_libre"] or "")
         self._duree_var.set(ev["duree"] or "")
 
         if self.locked:
@@ -472,10 +542,17 @@ class CotationForm(tk.Toplevel):
             au = self._au_entry.get_date().strftime("%Y-%m-%d")
         except Exception:
             du, au = "", ""
-        db.mettre_a_jour_evaluation(self.conn, self.eval_id,
-                                    soignant=self._soignant_var.get(),
-                                    periode_du=du, periode_au=au,
-                                    duree=self._duree_var.get())
+        champs = dict(
+            referent=self._referent_var.get(),
+            role_referent=self._role_referent_wdg.get(),
+            periode_du=du,
+            periode_au=au,
+            duree=self._duree_var.get(),
+            participant_libre=self._participant_libre_var.get(),
+        )
+        for label, col in PARTICIPANTS_FIXES:
+            champs[col] = int(self._participant_vars[col].get())
+        db.mettre_a_jour_evaluation(self.conn, self.eval_id, **champs)
 
     def _autosave_score(self, item_key):
         if self.locked:

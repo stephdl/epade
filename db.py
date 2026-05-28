@@ -351,6 +351,15 @@ def init_db(db_path=None):
             id            INTEGER PRIMARY KEY AUTOINCREMENT,
             patient_id    INTEGER NOT NULL REFERENCES patients(id),
             soignant      TEXT NOT NULL DEFAULT '',
+            referent      TEXT NOT NULL DEFAULT '',
+            role_referent TEXT NOT NULL DEFAULT '',
+            participant_mt    INTEGER DEFAULT 0,
+            participant_mco   INTEGER DEFAULT 0,
+            participant_idec  INTEGER DEFAULT 0,
+            participant_ide   INTEGER DEFAULT 0,
+            participant_as    INTEGER DEFAULT 0,
+            participant_ash   INTEGER DEFAULT 0,
+            participant_libre TEXT,
             periode_du    TEXT NOT NULL DEFAULT '',
             periode_au    TEXT NOT NULL DEFAULT '',
             duree         TEXT,
@@ -374,6 +383,27 @@ def init_db(db_path=None):
                 "attitude_a","attitude_b","attitude_c","attitude_d"):
         if col not in existing_evals:
             conn.execute(f"ALTER TABLE evaluations ADD COLUMN {col} TEXT")
+    # Migration : nouvelles colonnes référent et participants
+    if "referent" not in existing_evals:
+        conn.execute("ALTER TABLE evaluations ADD COLUMN referent TEXT NOT NULL DEFAULT ''")
+    if "role_referent" not in existing_evals:
+        conn.execute("ALTER TABLE evaluations ADD COLUMN role_referent TEXT NOT NULL DEFAULT ''")
+    for pcol, pdef in (
+        ("participant_mt",   "INTEGER DEFAULT 0"),
+        ("participant_mco",  "INTEGER DEFAULT 0"),
+        ("participant_idec", "INTEGER DEFAULT 0"),
+        ("participant_ide",  "INTEGER DEFAULT 0"),
+        ("participant_as",   "INTEGER DEFAULT 0"),
+        ("participant_ash",  "INTEGER DEFAULT 0"),
+        ("participant_libre", "TEXT"),
+    ):
+        if pcol not in existing_evals:
+            conn.execute(f"ALTER TABLE evaluations ADD COLUMN {pcol} {pdef}")
+    # Copier soignant → referent pour les évals existantes
+    conn.execute(
+        "UPDATE evaluations SET referent = soignant "
+        "WHERE (referent IS NULL OR referent = '') AND soignant != ''"
+    )
     conn.commit()
     return conn
 
@@ -484,8 +514,10 @@ def valider_champs_requis(conn, eval_id):
     if row is None:
         return ["Évaluation introuvable"]
     manquants = []
-    if not (row["soignant"] or "").strip():
-        manquants.append("Soignant")
+    if not (row["referent"] or "").strip():
+        manquants.append("Référent (nom)")
+    if not (row["role_referent"] or "").strip():
+        manquants.append("Référent (rôle)")
     if not (row["periode_du"] or "").strip():
         manquants.append("Période — date de début")
     if not (row["periode_au"] or "").strip():

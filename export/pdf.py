@@ -106,7 +106,20 @@ def export_fiche_complete(conn, eval_id, path):
         if cf_tel:
             cf_str += f"  — {cf_tel}"
         pdf.field_row("Contact famille :", cf_str)
-    pdf.field_row("Soignant :", ev["soignant"])
+    role = ev["role_referent"] or ""
+    nom_ref = ev["referent"] or ""
+    referent_str = f"{role} — {nom_ref}" if role and nom_ref else (role or nom_ref or "-")
+    pdf.field_row("Référent :", referent_str)
+    parts = [label for label, col in [
+        ("MT", "participant_mt"), ("MCO", "participant_mco"),
+        ("IDEC", "participant_idec"), ("IDE", "participant_ide"),
+        ("AS", "participant_as"), ("ASH", "participant_ash")]
+        if ev[col]]
+    libre = (ev["participant_libre"] or "").strip()
+    if libre:
+        parts.append(libre)
+    if parts:
+        pdf.field_row("Participants :", ", ".join(parts))
     pdf.field_row("Période évaluée :", f"Du {ev['periode_du']} au {ev['periode_au']}")
     pdf.field_row("Durée :", ev["duree"])
     pdf.field_row("Date de cotation :", ev["date_cotation"])
@@ -201,7 +214,20 @@ def export_resume(conn, eval_id, path):
         pdf.field_row("Service / Chambre :", patient["service_chambre"])
     if patient["medecin_referent"]:
         pdf.field_row("Médecin référent :", patient["medecin_referent"])
-    pdf.field_row("Soignant :", ev["soignant"])
+    role = ev["role_referent"] or ""
+    nom_ref = ev["referent"] or ""
+    referent_str = f"{role} — {nom_ref}" if role and nom_ref else (role or nom_ref or "-")
+    pdf.field_row("Référent :", referent_str)
+    parts = [label for label, col in [
+        ("MT", "participant_mt"), ("MCO", "participant_mco"),
+        ("IDEC", "participant_idec"), ("IDE", "participant_ide"),
+        ("AS", "participant_as"), ("ASH", "participant_ash")]
+        if ev[col]]
+    libre = (ev["participant_libre"] or "").strip()
+    if libre:
+        parts.append(libre)
+    if parts:
+        pdf.field_row("Participants :", ", ".join(parts))
     pdf.field_row("Période :", f"Du {ev['periode_du']} au {ev['periode_au']}")
     pdf.field_row("Date de cotation :", ev["date_cotation"])
     pdf.ln(6)
@@ -261,7 +287,7 @@ def export_historique(conn, patient_id, path):
     pdf.section_title("Historique des évaluations")
 
     cols    = [38, 24, 34, 12, 12, 12, 12, 16, 20]
-    headers = ["Date", "Soignant", "Période", "A", "B", "C", "D", "Total", "Statut"]
+    headers = ["Date", "Référent", "Période", "A", "B", "C", "D", "Total", "Statut"]
     pdf.set_fill_color(210, 210, 210)
     pdf.set_font("Sans", "B", 8)
     for w, h in zip(cols, headers):
@@ -276,7 +302,7 @@ def export_historique(conn, patient_id, path):
         pdf.set_font("Sans", "", 8)
         row = [
             (ev["date_cotation"] or "")[:19],
-            ev["soignant"] or "",
+            ev["referent"] or ev["soignant"] or "",
             f'{ev["periode_du"]} > {ev["periode_au"]}',
             str(db.score_domaine(ev, "A")),
             str(db.score_domaine(ev, "B")),
