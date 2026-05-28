@@ -68,6 +68,7 @@ jobs:
           cp dist/EPADE EPADE-linux/EPADE
           cp assets/epade.png EPADE-linux/epade.png
           cp install-bin.sh EPADE-linux/install.sh
+          cp LISEZMOI.txt EPADE-linux/LISEZMOI.txt
           chmod +x EPADE-linux/EPADE EPADE-linux/install.sh
           tar -czf EPADE-linux-x86_64.tar.gz EPADE-linux/
 

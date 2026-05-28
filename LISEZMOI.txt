@@ -1,0 +1,47 @@
+ÉPADE — Application de cotation psychogériatrique
+===================================================
+
+CONTENU DE L'ARCHIVE
+---------------------
+  EPADE          Binaire Linux autonome (aucune installation Python requise)
+  epade.png      Icône de l'application
+  install.sh     Script d'installation de l'icône et du lanceur
+  LISEZMOI.txt   Ce fichier
+
+
+INSTALLATION
+------------
+1. Extraire l'archive dans le dossier de votre choix (local ou réseau partagé) :
+     tar -xzf EPADE-linux-x86_64.tar.gz
+
+2. Placer le dossier EPADE-linux/ à son emplacement DEFINITIF avant de continuer.
+   Important : si vous déplacez le dossier après l'étape 3, il faudra relancer install.sh.
+
+3. Depuis le dossier extrait, lancer install.sh UNE FOIS PAR POSTE :
+     bash install.sh
+
+   Ce script installe l'icône et crée un lanceur dans votre menu d'applications.
+   Il ne déplace pas le binaire — celui-ci reste dans ce dossier.
+
+4. Lancer l'application :
+   - Via le menu d'applications (icône ÉPADE)
+   - Ou directement : ./EPADE
+
+
+DOSSIER PARTAGÉ (plusieurs postes)
+-----------------------------------
+Placez le dossier sur le partage réseau, puis lancez install.sh sur chaque poste.
+Tous les utilisateurs partageront la même base de données data/epade.db.
+
+
+RELANCER install.sh
+-------------------
+Sans danger : le script peut être exécuté plusieurs fois.
+Il met à jour l'icône et le lanceur à chaque fois.
+À relancer si vous avez déplacé le dossier EPADE-linux/.
+
+
+BASE DE DONNÉES
+---------------
+La base epade.db est créée automatiquement dans data/ à côté du binaire
+au premier lancement. Elle n'est jamais modifiée par install.sh.
