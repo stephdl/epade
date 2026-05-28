@@ -122,11 +122,11 @@ class HistoriqueDialog(tk.Toplevel):
         legend.pack(padx=16, pady=(4, 4), anchor="w")
         for dom, color in _BAR_COLORS.items():
             nom_dom = db.DOMAINES[dom][0]
-            c = tk.Canvas(legend, width=22, height=22, highlightthickness=0)
-            c.pack(side=tk.LEFT, padx=(0, 5))
-            c.create_rectangle(1, 1, 21, 21, fill=color, outline="")
+            c = tk.Canvas(legend, width=32, height=32, highlightthickness=0)
+            c.pack(side=tk.LEFT, padx=(0, 6))
+            c.create_rectangle(1, 1, 31, 31, fill=color, outline="")
             ttk.Label(legend, text=f"{dom} — {nom_dom}",
-                      font=("", 10)).pack(side=tk.LEFT, padx=(0, 18))
+                      font=("", 11)).pack(side=tk.LEFT, padx=(0, 20))
 
     def _redraw_graph(self, event=None):
         canvas = self._canvas
