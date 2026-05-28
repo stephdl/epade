@@ -167,19 +167,17 @@ def export_fiche_complete(conn, eval_id, path):
         pdf.set_font("Sans", "B", 9)
         pdf.cell(0, 6, f"Score domaine {dom} : {score_dom} / 16", align="R", **pdf._nl())
 
-        # Réflexion — cause et attitude (par domaine, avec retour à la ligne auto)
-        cause_val = ev[f"cause_{dom.lower()}"] or ""
-        att_val   = ev[f"attitude_{dom.lower()}"] or ""
-        if cause_val:
-            pdf.set_font("Sans", "B", 8)
-            pdf.cell(label_w, 5, "Réflexion — cause :")
-            pdf.set_font("Sans", "", 8)
-            pdf.multi_cell(0, 5, cause_val, new_x=XPos.LMARGIN, new_y=YPos.NEXT)
-        if att_val:
-            pdf.set_font("Sans", "B", 8)
-            pdf.cell(label_w, 5, "Attitude appropriée :")
-            pdf.set_font("Sans", "", 8)
-            pdf.multi_cell(0, 5, att_val, new_x=XPos.LMARGIN, new_y=YPos.NEXT)
+        # Réflexion — cause et attitude (toujours affichées, "—" si vide)
+        cause_val = ev[f"cause_{dom.lower()}"] or "—"
+        att_val   = ev[f"attitude_{dom.lower()}"] or "—"
+        pdf.set_font("Sans", "B", 8)
+        pdf.cell(label_w, 5, "Réflexion — cause :")
+        pdf.set_font("Sans", "", 8)
+        pdf.multi_cell(0, 5, cause_val, new_x=XPos.LMARGIN, new_y=YPos.NEXT)
+        pdf.set_font("Sans", "B", 8)
+        pdf.cell(label_w, 5, "Attitude appropriée :")
+        pdf.set_font("Sans", "", 8)
+        pdf.multi_cell(0, 5, att_val, new_x=XPos.LMARGIN, new_y=YPos.NEXT)
         pdf.ln(2)
 
     total = db.score_total(ev)
