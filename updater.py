@@ -8,7 +8,8 @@ _RELEASES_BASE = "https://github.com/stephdl/epade/releases/tag"
 
 def _parse_version(tag: str) -> tuple:
     try:
-        return tuple(int(x) for x in tag.lstrip("v").split("."))
+        base = tag.lstrip("v").split("-")[0]  # ignore suffixe pre-release (ex. -dev.1)
+        return tuple(int(x) for x in base.split("."))
     except ValueError:
         return (0,)
 

@@ -27,3 +27,17 @@ def test_version_majeure_detectee():
 
 def test_version_dev_toujours_mise_a_jour():
     assert updater._parse_version("v1.0.1") > updater._parse_version("dev")
+
+
+def test_parse_version_prerelease_extrait_base():
+    assert updater._parse_version("1.2.2-dev.1") == (1, 2, 2)
+
+
+def test_prerelease_pas_de_mise_a_jour_meme_base():
+    # 1.2.2-dev.1 en cours, stable 1.2.2 dispo → pas de mise à jour
+    assert not (updater._parse_version("v1.2.2") > updater._parse_version("1.2.2-dev.1"))
+
+
+def test_prerelease_mise_a_jour_version_suivante():
+    # 1.2.2-dev.1 en cours, stable 1.2.3 dispo → mise à jour
+    assert updater._parse_version("v1.2.3") > updater._parse_version("1.2.2-dev.1")
