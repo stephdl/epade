@@ -67,14 +67,9 @@ jobs:
           mkdir -p EPADE.AppDir/usr/bin
           cp dist/EPADE EPADE.AppDir/usr/bin/EPADE
           cp assets/epade.png EPADE.AppDir/epade.png
-          cat > EPADE.AppDir/epade.desktop << 'EOF'
-          [Desktop Entry]
-          Name=EPADE
-          Exec=EPADE
-          Icon=epade
-          Type=Application
-          Categories=Medical;Science;
-          EOF
+          cp assets/epade.png EPADE.AppDir/.DirIcon
+          printf '[Desktop Entry]\nName=EPADE\nExec=EPADE\nIcon=epade\nType=Application\nCategories=Medical;Science;\n' \
+            > EPADE.AppDir/epade.desktop
           printf '#!/bin/sh\nexec "$APPDIR/usr/bin/EPADE" "$@"\n' > EPADE.AppDir/AppRun
           chmod +x EPADE.AppDir/AppRun EPADE.AppDir/usr/bin/EPADE
 
