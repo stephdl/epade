@@ -77,7 +77,7 @@ def _dialog(parent, title, message, buttons):
     py = parent.winfo_rooty() + parent.winfo_height() // 2
     w = max(dlg.winfo_reqwidth(), 460)
     h = dlg.winfo_reqheight()
-    dlg.geometry(f"+{max(0, px - w // 2)}+{max(0, py - h // 2)}")
+    dlg.geometry(f"{w}x{h}+{max(0, px - w // 2)}+{max(0, py - h // 2)}")
     try:
         dlg.grab_set()
     except Exception:
