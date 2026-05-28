@@ -63,15 +63,17 @@ class ExportChoixDialog(tk.Toplevel):
         path = self._ask_path(f"{self._prefix}_fiche.pdf")
         if path:
             pdf_export.export_fiche_complete(self.conn, self.eval_id, path)
-            messagebox.showinfo("Export réussi", f"PDF enregistré :\n{path}", parent=self)
+            master = self.master
             self.destroy()
+            messagebox.showinfo("Export réussi", f"PDF enregistré :\n{path}", parent=master)
 
     def _resume(self):
         path = self._ask_path(f"{self._prefix}_resume.pdf")
         if path:
             pdf_export.export_resume(self.conn, self.eval_id, path)
-            messagebox.showinfo("Export réussi", f"PDF enregistré :\n{path}", parent=self)
+            master = self.master
             self.destroy()
+            messagebox.showinfo("Export réussi", f"PDF enregistré :\n{path}", parent=master)
 
     def _historique(self):
         from datetime import date as _date
@@ -82,5 +84,6 @@ class ExportChoixDialog(tk.Toplevel):
         path = self._ask_path(f"EPADE_{nom}_{prenom}_historique_{today}.pdf")
         if path:
             pdf_export.export_historique(self.conn, self.patient_id, path)
-            messagebox.showinfo("Export réussi", f"PDF enregistré :\n{path}", parent=self)
+            master = self.master
             self.destroy()
+            messagebox.showinfo("Export réussi", f"PDF enregistré :\n{path}", parent=master)
