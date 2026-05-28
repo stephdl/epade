@@ -45,18 +45,3 @@ BASE DE DONNÉES
 ---------------
 La base epade.db est créée automatiquement dans data/ à côté du binaire
 au premier lancement. Elle n'est jamais modifiée par install.sh.
-
-
-SAUVEGARDE ET RESTAURATION
----------------------------
-Deux boutons sont disponibles en haut à droite de la fenêtre principale :
-
-  Sauvegarder la base  — copie epade.db vers l'emplacement de votre choix
-                         (clé USB, autre dossier réseau, cloud…).
-                         Le nom proposé inclut la date : epade_sauvegarde_AAAA-MM-JJ.db
-
-  Restaurer la base    — remplace la base active par une sauvegarde choisie.
-                         Une confirmation est demandée. La liste est rechargée
-                         immédiatement sans redémarrer l'application.
-
-Conseil : sauvegardez régulièrement, surtout avant une mise à jour.
