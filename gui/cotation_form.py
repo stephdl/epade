@@ -51,6 +51,35 @@ def _match_option(value, options):
 _VIDE = "—"
 
 
+class _SmartCombobox(ttk.Combobox):
+    """ttk.Combobox qui ouvre le popup vers le haut quand il manque de place vers le bas."""
+
+    def __init__(self, *args, **kwargs):
+        kwargs.setdefault('postcommand', self._on_post)
+        super().__init__(*args, **kwargs)
+
+    def _on_post(self):
+        self.after_idle(self._reposition_popup)
+
+    def _reposition_popup(self):
+        try:
+            popdown = self.tk.call('ttk::combobox::PopdownWindow', self)
+        except tk.TclError:
+            return
+        self.tk.call('update', 'idletasks')
+        try:
+            popup_h = int(self.tk.call('winfo', 'reqheight', popdown))
+        except tk.TclError:
+            return
+        cb_x = self.winfo_rootx()
+        cb_y = self.winfo_rooty()
+        cb_h = self.winfo_height()
+        screen_h = self.winfo_screenheight()
+        if cb_y + cb_h + popup_h > screen_h:
+            new_y = max(0, cb_y - popup_h)
+            self.tk.call('wm', 'geometry', popdown, f'+{cb_x}+{new_y}')
+
+
 class _DropdownLibre(ttk.Frame):
     """Combobox + Entry pour champ libre (visible si 'Autre...' sélectionné)."""
 
@@ -61,8 +90,8 @@ class _DropdownLibre(ttk.Frame):
         self._on_change = on_change
 
         self._var = tk.StringVar(value=_VIDE)
-        self._cb = ttk.Combobox(self, textvariable=self._var, values=self._choices,
-                                state=state, width=42)
+        self._cb = _SmartCombobox(self, textvariable=self._var, values=self._choices,
+                                  state=state, width=42)
         self._cb.grid(row=0, column=0, sticky="ew")
 
         self._libre_var = tk.StringVar()
@@ -198,7 +227,17 @@ class CotationForm(tk.Toplevel):
         lbl_pdf = ttk.Label(hdr, text="Document officiel ÉPADE (PDF)",
                             foreground="#2563EB", cursor="hand2", font=("", 9))
         lbl_pdf.pack(side=tk.RIGHT)
-        lbl_pdf.bind("<Button-1>", lambda _: webbrowser.open_new(_PDF_URL))
+        def _open_pdf(_event=None):
+            try:
+                opened = webbrowser.open(_PDF_URL)
+                if not opened:
+                    raise OSError("Aucun navigateur disponible")
+            except Exception as exc:
+                messagebox.showerror(
+                    "Impossible d'ouvrir le lien",
+                    f"Copiez l'URL manuellement :\n{_PDF_URL}\n\n({exc})",
+                )
+        lbl_pdf.bind("<Button-1>", _open_pdf)
 
         f = ttk.LabelFrame(self._inner, text="", padding=10)
         f.pack(fill=tk.X, pady=(0, 4))
@@ -285,8 +324,8 @@ class CotationForm(tk.Toplevel):
 
             score_var = tk.StringVar(value=SCORE_LABELS[0])
             self._score_vars[item_key] = score_var
-            ttk.Combobox(f, textvariable=score_var, values=score_labels(item_key),
-                         state=cb_state, width=55).grid(
+            _SmartCombobox(f, textvariable=score_var, values=score_labels(item_key),
+                           state=cb_state, width=55).grid(
                 row=i, column=1, padx=6, pady=2, sticky="ew")
             if not self.locked:
                 score_var.trace_add("write", lambda *_, k=item_key: self._autosave_score(k))
