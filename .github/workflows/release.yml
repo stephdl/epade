@@ -41,8 +41,8 @@ jobs:
     runs-on: ubuntu-latest
     container: rockylinux/rockylinux:9
     steps:
-      - name: Installer git et outils
-        run: dnf install -y git file
+      - name: Installer git
+        run: dnf install -y git
 
       - uses: actions/checkout@v6
 
@@ -62,33 +62,20 @@ jobs:
             --icon "assets/epade.ico" \
             main.py
 
-      - name: Préparer l'AppDir
+      - name: Créer l'archive tar.gz
         run: |
-          mkdir -p EPADE.AppDir/usr/bin
-          cp dist/EPADE EPADE.AppDir/usr/bin/EPADE
-          cp assets/epade.png EPADE.AppDir/epade.png
-          cp assets/epade.png EPADE.AppDir/.DirIcon
-          printf '[Desktop Entry]\nName=EPADE\nExec=EPADE\nIcon=epade\nType=Application\nCategories=Science;Education;X-Medical;\n' \
-            > EPADE.AppDir/epade.desktop
-          printf '#!/bin/sh\nexec "$APPDIR/usr/bin/EPADE" "$@"\n' > EPADE.AppDir/AppRun
-          chmod +x EPADE.AppDir/AppRun EPADE.AppDir/usr/bin/EPADE
-
-      - name: Télécharger appimagetool
-        run: |
-          curl -Lo appimagetool \
-            https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage
-          chmod +x appimagetool
-
-      - name: Construire l'AppImage
-        run: |
-          ARCH=x86_64 ./appimagetool --appimage-extract-and-run \
-            EPADE.AppDir EPADE-linux-x86_64.AppImage
+          mkdir -p EPADE-linux
+          cp dist/EPADE EPADE-linux/EPADE
+          cp assets/epade.png EPADE-linux/epade.png
+          cp install-bin.sh EPADE-linux/install.sh
+          chmod +x EPADE-linux/EPADE EPADE-linux/install.sh
+          tar -czf EPADE-linux-x86_64.tar.gz EPADE-linux/
 
       - name: Upload artifact
         uses: actions/upload-artifact@v7
         with:
           name: EPADE-linux
-          path: EPADE-linux-x86_64.AppImage
+          path: EPADE-linux-x86_64.tar.gz
 
   release:
     needs: [build-windows, build-linux]
@@ -102,8 +89,7 @@ jobs:
       - name: Renommer les binaires
         run: |
           mv dist/EPADE-windows/EPADE.exe dist/EPADE.exe
-          mv dist/EPADE-linux/EPADE-linux-x86_64.AppImage dist/EPADE-linux-x86_64.AppImage
-          chmod +x dist/EPADE-linux-x86_64.AppImage
+          mv dist/EPADE-linux/EPADE-linux-x86_64.tar.gz dist/EPADE-linux-x86_64.tar.gz
 
       - name: Créer la release GitHub
         uses: softprops/action-gh-release@v3
@@ -117,18 +103,18 @@ jobs:
             2. Double-cliquer pour lancer — aucune installation requise
             3. La base de données `data\epade.db` est créée automatiquement à côté de l'exe
 
-            ### Installation Linux (AppImage)
-            1. Télécharger `EPADE-linux-x86_64.AppImage`
-            2. Le rendre exécutable : `chmod +x EPADE-linux-x86_64.AppImage`
-            3. Lancer : `./EPADE-linux-x86_64.AppImage`
-            4. La base de données `data/epade.db` est créée automatiquement à côté du fichier
-            5. L'icône apparaît automatiquement dans les gestionnaires de fichiers compatibles AppImage
+            ### Installation Linux
+            1. Télécharger et extraire `EPADE-linux-x86_64.tar.gz`
+            2. Placer le dossier `EPADE-linux/` à l'emplacement souhaité (local ou dossier réseau partagé)
+            3. Lancer `install.sh` une fois par poste pour installer l'icône et le lanceur
+            4. Lancer directement : `./EPADE` depuis le dossier
+            5. La base de données `data/epade.db` est créée automatiquement dans le dossier
 
             ### Installation Linux (depuis les sources) / macOS
             Voir [README.md](https://github.com/${{ github.repository }}/blob/master/README.md)
           generate_release_notes: true
           files: |
             dist/EPADE.exe
-            dist/EPADE-linux-x86_64.AppImage
+            dist/EPADE-linux-x86_64.tar.gz
           draft: false
           prerelease: ${{ contains(github.ref_name, '-') }}
