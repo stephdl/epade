@@ -4,6 +4,7 @@ from pathlib import Path
 import unicodedata
 import db
 import export.pdf as pdf_export
+from utils import fix_wm_decorations
 
 
 def _safe(s):
@@ -29,6 +30,7 @@ class ExportChoixDialog(tk.Toplevel):
 
         self.title("Exporter PDF")
         self.resizable(False, False)
+        fix_wm_decorations(self)
         self.update_idletasks()
         try:
             self.grab_set()

@@ -2,7 +2,7 @@ import contextlib
 import tkinter as tk
 from tkinter import ttk, messagebox
 from gui.datepicker import LargeDateEntry
-from utils import open_url
+from utils import open_url, fix_wm_decorations
 import db
 
 SCORE_LABELS = ["— Non renseigné —", "0 — Absent", "1 — Léger",
@@ -180,6 +180,7 @@ class CotationForm(tk.Toplevel):
 
         self.title("Cotation ÉPADE" + (" [verrouillée]" if self.locked else ""))
         self.geometry("1000x720")
+        fix_wm_decorations(self)
         self.update_idletasks()
         try:
             self.grab_set()

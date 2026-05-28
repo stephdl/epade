@@ -4,6 +4,20 @@ import sys
 import webbrowser
 
 
+def fix_wm_decorations(window) -> None:
+    """Force les décorations complètes (réduire/agrandir/fermer) sur Linux.
+
+    Quand un Toplevel est créé avec un parent, le WM reçoit WM_TRANSIENT_FOR
+    et supprime les boutons réduire/agrandir sur GNOME/KDE. Ce hint corrige ça.
+    Sans effet sur Windows et macOS.
+    """
+    if sys.platform.startswith("linux"):
+        try:
+            window.wm_attributes("-type", "normal")
+        except Exception:
+            pass
+
+
 def open_url(url: str) -> None:
     """Ouvre une URL dans le navigateur par défaut.
 

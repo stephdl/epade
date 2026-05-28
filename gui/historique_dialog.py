@@ -1,6 +1,7 @@
 import tkinter as tk
 from tkinter import ttk
 import db
+from utils import fix_wm_decorations
 
 SEUIL = 17
 _BAR_COLORS = {"A": "#e07070", "B": "#7090e0", "C": "#70c870", "D": "#d4b040"}
@@ -12,6 +13,7 @@ class HistoriqueDialog(tk.Toplevel):
         self.title("Historique des évaluations")
         self.resizable(True, True)
         self.minsize(680, 400)
+        fix_wm_decorations(self)
 
         patient = db.get_patient(conn, patient_id)
         evals = [e for e in db.get_evaluations_patient(conn, patient_id) if e["finalisee"]]

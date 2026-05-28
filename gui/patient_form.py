@@ -1,6 +1,7 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
 import db
+from utils import fix_wm_decorations
 
 
 class PatientForm(tk.Toplevel):
@@ -15,6 +16,7 @@ class PatientForm(tk.Toplevel):
 
         self.title("Modifier le patient" if self._edit else "Nouveau patient")
         self.resizable(False, False)
+        fix_wm_decorations(self)
         self.update_idletasks()
         try:
             self.grab_set()
