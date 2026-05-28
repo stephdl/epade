@@ -4,7 +4,7 @@ import db
 from utils import fix_wm_decorations
 
 SEUIL = 17
-_BAR_COLORS = {"A": "#e53935", "B": "#1e88e5", "C": "#8e24aa", "D": "#fb8c00"}
+_BAR_COLORS = {"A": "#e53935", "B": "#1e88e5", "C": "#2e7d32", "D": "#fb8c00"}
 
 
 class HistoriqueDialog(tk.Toplevel):
@@ -122,11 +122,11 @@ class HistoriqueDialog(tk.Toplevel):
         legend.pack(padx=16, pady=(4, 4), anchor="w")
         for dom, color in _BAR_COLORS.items():
             nom_dom = db.DOMAINES[dom][0]
-            c = tk.Canvas(legend, width=16, height=16, highlightthickness=0)
-            c.pack(side=tk.LEFT, padx=(0, 4))
-            c.create_rectangle(1, 1, 15, 15, fill=color, outline="")
+            c = tk.Canvas(legend, width=22, height=22, highlightthickness=0)
+            c.pack(side=tk.LEFT, padx=(0, 5))
+            c.create_rectangle(1, 1, 21, 21, fill=color, outline="")
             ttk.Label(legend, text=f"{dom} — {nom_dom}",
-                      font=("", 9)).pack(side=tk.LEFT, padx=(0, 16))
+                      font=("", 10)).pack(side=tk.LEFT, padx=(0, 18))
 
     def _redraw_graph(self, event=None):
         canvas = self._canvas
