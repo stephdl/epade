@@ -14,7 +14,7 @@ _NIVEAUX = ["absent", "léger", "moyen", "fort", "très fort"]
 def score_labels(item_key):
     criteres = db.CRITERES.get(item_key, {})
     labels = [SCORE_LABELS[0]]
-    for score in range(5):
+    for score in range(4, -1, -1):
         desc = criteres.get(score, "")
         niveau = _NIVEAUX[score]
         labels.append(f"{score} — ({niveau}) {desc}" if desc else SCORE_LABELS[score + 1])
@@ -51,7 +51,7 @@ def _label_from_score(score, item_key=None):
     if score is None:
         return SCORE_LABELS[0]
     if item_key:
-        return score_labels(item_key)[score + 1]
+        return score_labels(item_key)[5 - score]
     return SCORE_LABELS[score + 1]
 
 

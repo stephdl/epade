@@ -51,19 +51,22 @@ def test_score_labels_premier_element_non_renseigne():
 
 
 def test_score_labels_contient_le_score():
+    # Les scores sont affichés de 4 à 0 (ordre décroissant)
     for item in ALL_ITEMS:
         labels = score_labels(item)
-        for i, label in enumerate(labels[1:]):
-            assert label.startswith(str(i)), \
-                f"{item} label {i} ne commence pas par '{i}' : '{label}'"
+        scores_attendus = [4, 3, 2, 1, 0]
+        for idx, (label, score) in enumerate(zip(labels[1:], scores_attendus)):
+            assert label.startswith(str(score)), \
+                f"{item} position {idx+1} : attendu '{score}', label : '{label}'"
 
 
 def test_score_labels_contient_la_description():
+    # Labels en ordre décroissant : index 1=score4, 2=score3, ... 5=score0
     for item in ALL_ITEMS:
         labels = score_labels(item)
         for score in range(5):
             desc = db.CRITERES[item][score]
-            assert desc in labels[score + 1], \
+            assert desc in labels[5 - score], \
                 f"{item} niveau {score} : description absente du label"
 
 
@@ -82,4 +85,4 @@ def test_score_from_label_extrait_entier():
     for item in ALL_ITEMS:
         labels = score_labels(item)
         for score in range(5):
-            assert _score_from_label(labels[score + 1]) == score
+            assert _score_from_label(labels[5 - score]) == score
