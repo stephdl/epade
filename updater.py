@@ -3,7 +3,7 @@ import urllib.request
 import json
 
 _GITHUB_API = "https://api.github.com/repos/stephdl/epade/releases/latest"
-RELEASES_URL = "https://github.com/stephdl/epade/releases/latest"
+_RELEASES_BASE = "https://github.com/stephdl/epade/releases/tag"
 
 
 def _parse_version(tag: str) -> tuple:
@@ -33,7 +33,8 @@ def check_update_async(current_version: str, callback):
                 data = json.loads(resp.read())
             latest_tag = data.get("tag_name", "")
             if latest_tag and _parse_version(latest_tag) > _parse_version(current_version):
-                callback(latest_tag, RELEASES_URL)
+                tag_url = f"{_RELEASES_BASE}/{latest_tag}"
+                callback(latest_tag, tag_url)
         except Exception:
             pass
 
