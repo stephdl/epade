@@ -68,7 +68,7 @@ jobs:
           cp dist/EPADE EPADE.AppDir/usr/bin/EPADE
           cp assets/epade.png EPADE.AppDir/epade.png
           cp assets/epade.png EPADE.AppDir/.DirIcon
-          printf '[Desktop Entry]\nName=EPADE\nExec=EPADE\nIcon=epade\nType=Application\nCategories=Medical;Science;\n' \
+          printf '[Desktop Entry]\nName=EPADE\nExec=EPADE\nIcon=epade\nType=Application\nCategories=Science;Education;X-Medical;\n' \
             > EPADE.AppDir/epade.desktop
           printf '#!/bin/sh\nexec "$APPDIR/usr/bin/EPADE" "$@"\n' > EPADE.AppDir/AppRun
           chmod +x EPADE.AppDir/AppRun EPADE.AppDir/usr/bin/EPADE
