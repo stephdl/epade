@@ -1,8 +1,8 @@
 import contextlib
 import tkinter as tk
-from tkinter import ttk, messagebox
+from tkinter import ttk
 from gui.datepicker import LargeDateEntry
-from utils import open_url, fix_wm_decorations
+from utils import open_url, fix_wm_decorations, showwarning, showinfo, askyesno
 import db
 
 SCORE_LABELS = ["— Non renseigné —", "0 — Absent", "1 — Léger",
@@ -493,10 +493,8 @@ class CotationForm(tk.Toplevel):
         today = _date.today()
         du = self._du_entry.get_date()
         if du and du > today:
-            messagebox.showwarning(
-                "Date invalide",
-                "La date de début ne peut pas être dans le futur.",
-                parent=self)
+            showwarning(self, "Date invalide",
+                        "La date de début ne peut pas être dans le futur.")
             self._du_entry.set_date(today)
             du = today
         au = self._au_entry.get_date()
@@ -510,18 +508,14 @@ class CotationForm(tk.Toplevel):
         du = self._du_entry.get_date()
         au = self._au_entry.get_date()
         if au and au > today:
-            messagebox.showwarning(
-                "Date invalide",
-                "La date de fin ne peut pas être dans le futur.",
-                parent=self)
+            showwarning(self, "Date invalide",
+                        "La date de fin ne peut pas être dans le futur.")
             self._au_entry.set_date(today)
             au = today
         if du and au and au < du:
-            messagebox.showwarning(
-                "Date invalide",
-                "La date de fin ne peut pas être antérieure à la date de début.\n"
-                "La date de fin a été ramenée à la date de début.",
-                parent=self)
+            showwarning(self, "Date invalide",
+                        "La date de fin ne peut pas être antérieure à la date de début.\n"
+                        "La date de fin a été ramenée à la date de début.")
             self._au_entry.set_date(du)
         self._autosave_header()
 
@@ -584,15 +578,12 @@ class CotationForm(tk.Toplevel):
         self._autosave_header()
         manquants = db.valider_champs_requis(self.conn, self.eval_id)
         if manquants:
-            messagebox.showwarning(
-                "Champs manquants",
-                "Impossible de valider. Champs manquants :\n\n• " + "\n• ".join(manquants),
-                parent=self)
+            showwarning(self, "Impossible de valider",
+                        "Champs manquants :\n\n• " + "\n• ".join(manquants))
             return
-        if not messagebox.askyesno(
-                "Confirmer", "Cette évaluation sera verrouillée définitivement.\nContinuer ?",
-                parent=self):
+        if not askyesno(self, "Confirmer",
+                        "Cette évaluation sera verrouillée définitivement.\n\nContinuer ?"):
             return
         db.finaliser_evaluation(self.conn, self.eval_id)
-        messagebox.showinfo("Validée", "L'évaluation est verrouillée.", parent=self)
+        showinfo(self, "Validée", "L'évaluation est verrouillée.")
         self.destroy()

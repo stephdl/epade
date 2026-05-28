@@ -1,10 +1,10 @@
 import tkinter as tk
-from tkinter import ttk, messagebox, filedialog
+from tkinter import ttk, filedialog
 from pathlib import Path
 import unicodedata
 import db
 import export.pdf as pdf_export
-from utils import fix_wm_decorations
+from utils import fix_wm_decorations, showinfo
 
 
 def _safe(s):
@@ -67,7 +67,7 @@ class ExportChoixDialog(tk.Toplevel):
             pdf_export.export_fiche_complete(self.conn, self.eval_id, path)
             master = self.master
             self.destroy()
-            messagebox.showinfo("Export réussi", f"PDF enregistré :\n{path}", parent=master)
+            showinfo(master, "Export réussi", f"PDF enregistré :\n{path}")
 
     def _resume(self):
         path = self._ask_path(f"{self._prefix}_resume.pdf")
@@ -75,7 +75,7 @@ class ExportChoixDialog(tk.Toplevel):
             pdf_export.export_resume(self.conn, self.eval_id, path)
             master = self.master
             self.destroy()
-            messagebox.showinfo("Export réussi", f"PDF enregistré :\n{path}", parent=master)
+            showinfo(master, "Export réussi", f"PDF enregistré :\n{path}")
 
     def _historique(self):
         from datetime import date as _date
@@ -88,4 +88,4 @@ class ExportChoixDialog(tk.Toplevel):
             pdf_export.export_historique(self.conn, self.patient_id, path)
             master = self.master
             self.destroy()
-            messagebox.showinfo("Export réussi", f"PDF enregistré :\n{path}", parent=master)
+            showinfo(master, "Export réussi", f"PDF enregistré :\n{path}")

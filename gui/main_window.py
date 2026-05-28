@@ -1,10 +1,10 @@
 import contextlib
 import tkinter as tk
-from tkinter import ttk, messagebox, font as tkfont
+from tkinter import ttk, font as tkfont
 import db
 import config
 import updater
-from utils import open_url
+from utils import open_url, showinfo, showwarning, askyesno
 from gui.patient_form import PatientForm
 
 
@@ -57,10 +57,11 @@ def _ask_save_file(parent, **kwargs):
 
 def _dialog(parent, title, message, buttons, icon="info", width=520):
     """Dialog custom avec largeur fixe — évite les coupures de mots de messagebox."""
+    from utils import fix_wm_decorations
     dlg = tk.Toplevel(parent)
     dlg.title(title)
     dlg.resizable(False, False)
-    dlg.transient(parent)
+    fix_wm_decorations(dlg)
     dlg.grab_set()
     result = tk.StringVar(value="")
 
@@ -326,8 +327,7 @@ class MainWindow(tk.Tk):
     def _modifier_patient(self):
         pid = self._selected_patient_id()
         if pid is None:
-            messagebox.showinfo("Sélection requise",
-                                "Sélectionnez un patient dans la liste.", parent=self)
+            showinfo(self, "Sélection requise", "Sélectionnez un patient dans la liste.")
             return
         form = PatientForm(self, self.conn, patient_id=pid)
         if form.result == "deleted":
@@ -343,18 +343,16 @@ class MainWindow(tk.Tk):
     def _toggle_archive(self):
         pid = self._selected_patient_id()
         if pid is None:
-            messagebox.showinfo("Sélection requise",
-                                "Sélectionnez un patient dans la liste.", parent=self)
+            showinfo(self, "Sélection requise", "Sélectionnez un patient dans la liste.")
             return
         if self._selected_patient_is_archived():
             db.restaurer_patient(self.conn, pid)
         else:
             p = db.get_patient(self.conn, pid)
             nom = f"{p['nom'].upper()} {p['prenom']}"
-            if not messagebox.askyesno(
-                    "Archiver", f"Archiver {nom} ?\nLe patient n'apparaîtra plus dans "
-                    "la liste principale mais ses évaluations seront conservées.",
-                    parent=self):
+            if not askyesno(self, "Archiver",
+                            f"Archiver {nom} ?\n\nLe patient n'apparaîtra plus dans "
+                            "la liste principale mais ses évaluations seront conservées."):
                 return
             db.archiver_patient(self.conn, pid)
         self._refresh_patients()
@@ -419,8 +417,7 @@ class MainWindow(tk.Tk):
     def _nouvelle_evaluation(self):
         pid = self._selected_patient_id()
         if pid is None:
-            messagebox.showinfo("Sélection requise",
-                                "Sélectionnez un patient dans la liste.", parent=self)
+            showinfo(self, "Sélection requise", "Sélectionnez un patient dans la liste.")
             return
         eid = db.creer_evaluation(self.conn, pid)
         self._ouvrir_par_id(eid, pid)
@@ -429,8 +426,7 @@ class MainWindow(tk.Tk):
         eid = self._selected_eval_id()
         pid = self._selected_patient_id()
         if eid is None or pid is None:
-            messagebox.showinfo("Sélection requise",
-                                "Sélectionnez une évaluation dans la liste.", parent=self)
+            showinfo(self, "Sélection requise", "Sélectionnez une évaluation dans la liste.")
             return
         self._ouvrir_par_id(eid, pid)
 
@@ -491,8 +487,7 @@ class MainWindow(tk.Tk):
     def _ouvrir_historique(self):
         pid = self._selected_patient_id()
         if pid is None:
-            messagebox.showinfo("Sélection requise",
-                                "Sélectionnez un patient dans la liste.", parent=self)
+            showinfo(self, "Sélection requise", "Sélectionnez un patient dans la liste.")
             return
         from gui.historique_dialog import HistoriqueDialog
         HistoriqueDialog(self, self.conn, pid)
@@ -501,14 +496,12 @@ class MainWindow(tk.Tk):
         eid = self._selected_eval_id()
         pid = self._selected_patient_id()
         if eid is None:
-            messagebox.showinfo("Sélection requise",
-                                "Sélectionnez une évaluation dans la liste.", parent=self)
+            showinfo(self, "Sélection requise", "Sélectionnez une évaluation dans la liste.")
             return
         ev = db.get_evaluation(self.conn, eid)
         if not ev["finalisee"]:
-            messagebox.showwarning("Non finalisée",
-                                   "Seules les évaluations verrouillées peuvent être exportées.",
-                                   parent=self)
+            showwarning(self, "Non finalisée",
+                        "Seules les évaluations verrouillées peuvent être exportées.")
             return
         from gui.export_dialog import ExportChoixDialog
         ExportChoixDialog(self, self.conn, eid, pid)

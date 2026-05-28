@@ -1,6 +1,8 @@
 import os
 import subprocess
 import sys
+import tkinter as tk
+from tkinter import ttk
 import webbrowser
 
 
@@ -39,3 +41,62 @@ def open_url(url: str) -> None:
         except FileNotFoundError:
             pass
     webbrowser.open_new(url)
+
+
+# ── Dialogs custom (remplacement de messagebox) ───────────────────────────────
+
+def _dialog(parent, title, message, buttons):
+    """Crée un dialog modal centré sur parent, largeur minimum 460px."""
+    dlg = tk.Toplevel(parent)
+    dlg.title(title)
+    dlg.resizable(False, False)
+    dlg.minsize(460, 1)
+    fix_wm_decorations(dlg)
+    result = [None]
+
+    outer = ttk.Frame(dlg, padding=(20, 16, 20, 14))
+    outer.pack(fill=tk.BOTH, expand=True)
+
+    ttk.Label(outer, text=message, wraplength=420, justify=tk.LEFT).pack(
+        anchor=tk.W, pady=(0, 14))
+    ttk.Separator(outer).pack(fill=tk.X, pady=(0, 12))
+
+    btn_frame = ttk.Frame(outer)
+    btn_frame.pack()
+
+    def _close(v):
+        result[0] = v
+        dlg.destroy()
+
+    for text, value in buttons:
+        ttk.Button(btn_frame, text=text,
+                   command=lambda v=value: _close(v)).pack(side=tk.LEFT, padx=6)
+
+    dlg.update_idletasks()
+    px = parent.winfo_rootx() + parent.winfo_width() // 2
+    py = parent.winfo_rooty() + parent.winfo_height() // 2
+    w = max(dlg.winfo_reqwidth(), 460)
+    h = dlg.winfo_reqheight()
+    dlg.geometry(f"+{max(0, px - w // 2)}+{max(0, py - h // 2)}")
+    try:
+        dlg.grab_set()
+    except Exception:
+        dlg.after(100, dlg.grab_set)
+    dlg.wait_window()
+    return result[0]
+
+
+def showinfo(parent, title, message, **_):
+    _dialog(parent, title, message, [("OK", None)])
+
+
+def showwarning(parent, title, message, **_):
+    _dialog(parent, title, message, [("OK", None)])
+
+
+def showerror(parent, title, message, **_):
+    _dialog(parent, title, message, [("OK", None)])
+
+
+def askyesno(parent, title, message, **_):
+    return _dialog(parent, title, message, [("Oui", True), ("Non", False)])

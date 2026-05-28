@@ -1,7 +1,7 @@
 import tkinter as tk
-from tkinter import ttk, messagebox
+from tkinter import ttk
 import db
-from utils import fix_wm_decorations
+from utils import fix_wm_decorations, showwarning, askyesno
 
 
 class PatientForm(tk.Toplevel):
@@ -137,9 +137,8 @@ class PatientForm(tk.Toplevel):
         prenom = self._prenom.get().strip()
         ddn    = self._ddn.get().strip()
         if not nom or not prenom or not ddn:
-            messagebox.showwarning("Champs manquants",
-                                   "Le nom, le prénom et la date de naissance sont obligatoires.",
-                                   parent=self)
+            showwarning(self, "Champs manquants",
+                        "Le nom, le prénom et la date de naissance sont obligatoires.")
             return
 
         champs = dict(
@@ -172,16 +171,12 @@ class PatientForm(tk.Toplevel):
     def _supprimer(self):
         p = db.get_patient(self.conn, self.patient_id)
         nom = f"{p['nom'].upper()} {p['prenom']}"
-        if not messagebox.askyesno(
-                "Confirmer la suppression",
-                f"Supprimer définitivement {nom} ?\n\n"
-                "TOUTES ses évaluations seront effacées et cette action est IRRÉVERSIBLE.",
-                icon="warning", parent=self):
+        if not askyesno(self, "Confirmer la suppression",
+                        f"Supprimer définitivement {nom} ?\n\n"
+                        "TOUTES ses évaluations seront effacées et cette action est IRRÉVERSIBLE."):
             return
-        if not messagebox.askyesno(
-                "Dernière confirmation",
-                f"Êtes-vous absolument certain de vouloir supprimer {nom} ?",
-                icon="warning", parent=self):
+        if not askyesno(self, "Dernière confirmation",
+                        f"Êtes-vous absolument certain de vouloir supprimer {nom} ?"):
             return
         db.supprimer_patient(self.conn, self.patient_id)
         self.result = "deleted"
