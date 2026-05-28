@@ -57,17 +57,32 @@ Clic droit sur `EPADE.exe` → **Envoyer vers** → **Bureau (créer un raccourc
 ## Installation sur Linux — Binaire autonome (recommandée)
 
 Rendez-vous sur la page [Releases](https://github.com/stephdl/epade/releases) et téléchargez
-le fichier `EPADE-linux-x86_64` de la dernière version.
+l'archive `EPADE-linux-x86_64.tar.gz` de la dernière version.
 
 ```bash
-# Créer un dossier dédié et y placer le binaire
-mkdir -p ~/EPADE
-mv EPADE-linux-x86_64 ~/EPADE/
+# Extraire l'archive à l'emplacement définitif (local ou dossier réseau partagé)
+tar -xzf EPADE-linux-x86_64.tar.gz
 
-# Rendre le binaire exécutable et lancer
-chmod +x ~/EPADE/EPADE-linux-x86_64
-~/EPADE/EPADE-linux-x86_64
+# Installer l'icône et le lanceur (une seule fois par poste)
+cd EPADE-linux/
+bash install.sh
+
+# Lancer l'application
+./EPADE
 ```
+
+L'archive contient :
+
+| Fichier | Rôle |
+|---|---|
+| `EPADE` | Binaire autonome |
+| `epade.png` | Icône de l'application |
+| `install.sh` | Installe l'icône et le lanceur (à lancer une fois par poste) |
+| `LISEZMOI.txt` | Instructions détaillées |
+
+`install.sh` installe l'icône dans `~/.local/share/icons/` et crée un lanceur dans
+`~/.local/share/applications/` — il ne déplace pas le binaire.
+Il peut être relancé sans danger si le dossier a été déplacé.
 
 La base de données `data/epade.db` est créée automatiquement à côté du binaire.
 
@@ -260,18 +275,21 @@ Dossier d'installation\
 ### Linux — Binaire autonome
 
 ```
-~/EPADE/
-├── EPADE-linux-x86_64   ← seul ce fichier est remplacé lors d'une mise à jour
+~/EPADE-linux/
+├── EPADE        ← seul ce fichier est remplacé lors d'une mise à jour
+├── epade.png
+├── install.sh
 └── data/
-    └── epade.db         ← conservé intact entre les versions
+    └── epade.db ← conservé intact entre les versions
 ```
 
 **Procédure :**
 
 1. **Sauvegarder** la base via le bouton `Sauvegarder la base` (par précaution)
-2. Télécharger le nouveau `EPADE-linux-x86_64` depuis la page [Releases](https://github.com/stephdl/epade/releases)
-3. Remplacer l'ancien binaire — ne pas toucher au dossier `data/`
+2. Télécharger la nouvelle archive `EPADE-linux-x86_64.tar.gz` depuis la page [Releases](https://github.com/stephdl/epade/releases)
+3. Extraire et remplacer uniquement le fichier `EPADE` — ne pas toucher au dossier `data/`
 4. Lancer le nouveau binaire — la base est automatiquement migrée si nécessaire
+5. Relancer `bash install.sh` si vous souhaitez mettre à jour le lanceur
 
 > La migration de schéma est automatique : si une nouvelle version ajoute des champs,
 > ils sont créés à l'ouverture sans perte de données.
@@ -306,9 +324,12 @@ epade/
 ├── tests/           # 54 tests pytest (base en mémoire)
 ├── data/
 │   └── epade.db     # Base SQLite (créée au premier lancement)
+├── utils.py         # Utilitaires partagés (open_url — liens cliquables Linux)
 ├── backup.py        # Sauvegarde automatique (cron / Planificateur Windows)
 ├── backup.bat       # Wrapper Windows pour le Planificateur de tâches
-├── install.sh       # Installe le raccourci Linux
+├── install.sh       # Raccourci Linux depuis les sources
+├── install-bin.sh   # Icône + lanceur pour le binaire (embarqué dans le tar.gz)
+├── LISEZMOI.txt     # Instructions utilisateur (embarqué dans le tar.gz)
 └── requirements.txt
 ```
 
@@ -410,7 +431,7 @@ pytest tests/
 
 Les tests utilisent une base SQLite en mémoire — aucun fichier n'est créé ou modifié.
 
-54 tests couvrent : CRUD patients/évaluations, règles de validation, génération PDF,
+68 tests couvrent : CRUD patients/évaluations, règles de validation, génération PDF,
 configuration, intégrité des critères ÉPADE et labels des combobox.
 
 ---

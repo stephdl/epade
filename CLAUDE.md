@@ -18,7 +18,13 @@ toutes les distributions Linux modernes (Ubuntu 22.04+, Rocky/AlmaLinux 9+, Debi
 Fedora 37+). Compiler sur un système plus récent (ex. Ubuntu 24.04 + Python 3.14) produisait
 un binaire nécessitant GLIBC 2.38, incompatible avec Ubuntu 22.04 et Rocky Linux 9.
 
-Le container n'ayant pas `git` par défaut, `dnf install -y git` est fait avant `actions/checkout`.
+Le container n'ayant pas `git` par défaut, `dnf install -y git file` est fait avant `actions/checkout`.
+(`file` est requis par appimagetool si utilisé ; `curl-minimal` est déjà présent, ne pas installer `curl`.)
+
+Le binaire est distribué dans une archive **`EPADE-linux-x86_64.tar.gz`** contenant le binaire,
+l'icône PNG, `install.sh` et `LISEZMOI.txt`. `install.sh` installe l'icône dans
+`~/.local/share/icons/` et crée le `.desktop` — à lancer une fois par poste.
+AppImage a été écarté (nécessite libfuse2 absent sur les distros modernes).
 
 ### Binaire Windows
 
@@ -59,6 +65,7 @@ epade/
 ├── main.py                  # point d'entrée : crée la fenêtre tkinter et ouvre la DB
 ├── db.py                    # toute la logique SQLite (schéma + CRUD + CRITERES)
 ├── config.py                # lecture/écriture config.json (scaling, préférences)
+├── utils.py                 # open_url() — ouvre les liens sur Linux via xdg-open + restaure LD_LIBRARY_PATH
 ├── version.py               # __version__ = "dev" (remplacé par le tag lors du build CI)
 ├── gui/
 │   ├── main_window.py       # fenêtre principale : liste patients + liste évaluations
@@ -272,7 +279,7 @@ Polices : LiberationSans TTF (`/usr/share/fonts/liberation-sans-fonts/`) — né
 
 ---
 
-## Tests (pytest — 54 tests, base :memory:)
+## Tests (pytest — 68 tests, base :memory:)
 
 ### test_db.py (23 tests)
 | Test | Ce qui est vérifié |
