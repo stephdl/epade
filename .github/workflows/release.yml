@@ -41,8 +41,8 @@ jobs:
     runs-on: ubuntu-latest
     container: rockylinux/rockylinux:9
     steps:
-      - name: Installer git et outils
-        run: dnf install -y git curl
+      - name: Installer git
+        run: dnf install -y git
 
       - uses: actions/checkout@v6
 
