@@ -1,10 +1,10 @@
 import contextlib
 import tkinter as tk
 from tkinter import ttk, messagebox, font as tkfont
-import webbrowser
 import db
 import config
 import updater
+from utils import open_url
 from gui.patient_form import PatientForm
 
 
@@ -109,7 +109,7 @@ class MainWindow(tk.Tk):
     def _on_update_available(self, tag: str, url: str):
         def _show():
             self._lbl_update.configure(text=f"Mise a jour disponible : {tag}")
-            self._lbl_update.bind("<Button-1>", lambda _: webbrowser.open_new(url))
+            self._lbl_update.bind("<Button-1>", lambda _, u=url: open_url(u))
         self.after(0, _show)
 
     def _init_fonts(self):
@@ -247,7 +247,7 @@ class MainWindow(tk.Tk):
                             text="Echelle EPADE - Monfort JC, Lezy AM, Papin A, Tezenas S  |  www.psychoge.fr",
                             foreground="#2563EB", cursor="hand2", font=self._font_footer)
         lbl_ref.pack(side=tk.LEFT)
-        lbl_ref.bind("<Button-1>", lambda _: webbrowser.open_new("https://www.psychoge.fr"))
+        lbl_ref.bind("<Button-1>", lambda _: open_url("https://www.psychoge.fr"))
 
         ttk.Label(footer, text="Stephane de Labrusse  |",
                   font=self._font_footer).pack(side=tk.RIGHT, padx=(4, 0))
@@ -255,14 +255,14 @@ class MainWindow(tk.Tk):
         lbl_repo = ttk.Label(footer, text="github.com/stephdl/epade",
                              foreground="#2563EB", cursor="hand2", font=self._font_footer)
         lbl_repo.pack(side=tk.RIGHT, padx=(0, 4))
-        lbl_repo.bind("<Button-1>", lambda _: webbrowser.open_new("https://github.com/stephdl/epade"))
+        lbl_repo.bind("<Button-1>", lambda _: open_url("https://github.com/stephdl/epade"))
 
         ttk.Label(footer, text="|", font=self._font_footer).pack(side=tk.RIGHT, padx=4)
 
         lbl_email = ttk.Label(footer, text="stephdl@de-labrusse.fr",
                               foreground="#2563EB", cursor="hand2", font=self._font_footer)
         lbl_email.pack(side=tk.RIGHT, padx=(0, 4))
-        lbl_email.bind("<Button-1>", lambda _: webbrowser.open_new("mailto:stephdl@de-labrusse.fr"))
+        lbl_email.bind("<Button-1>", lambda _: open_url("mailto:stephdl@de-labrusse.fr"))
 
     # ── Patients ─────────────────────────────────────────────────────────
 

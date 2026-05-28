@@ -1,8 +1,8 @@
 import contextlib
 import tkinter as tk
 from tkinter import ttk, messagebox
-import webbrowser
 from gui.datepicker import LargeDateEntry
+from utils import open_url
 import db
 
 SCORE_LABELS = ["— Non renseigné —", "0 — Absent", "1 — Léger",
@@ -252,17 +252,7 @@ class CotationForm(tk.Toplevel):
         lbl_pdf = ttk.Label(hdr, text="Document officiel ÉPADE (PDF)",
                             foreground="#2563EB", cursor="hand2", font=("", 9))
         lbl_pdf.pack(side=tk.RIGHT)
-        def _open_pdf(_event=None):
-            try:
-                opened = webbrowser.open(_PDF_URL)
-                if not opened:
-                    raise OSError("Aucun navigateur disponible")
-            except Exception as exc:
-                messagebox.showerror(
-                    "Impossible d'ouvrir le lien",
-                    f"Copiez l'URL manuellement :\n{_PDF_URL}\n\n({exc})",
-                )
-        lbl_pdf.bind("<Button-1>", _open_pdf)
+        lbl_pdf.bind("<Button-1>", lambda _: open_url(_PDF_URL))
 
         f = ttk.LabelFrame(self._inner, text="", padding=10)
         f.pack(fill=tk.X, pady=(0, 4))
