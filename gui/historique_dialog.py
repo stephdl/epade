@@ -4,7 +4,7 @@ import db
 from utils import fix_wm_decorations
 
 SEUIL = 17
-_BAR_COLORS = {"A": "#e53935", "B": "#1e88e5", "C": "#43a047", "D": "#fb8c00"}
+_BAR_COLORS = {"A": "#e53935", "B": "#1e88e5", "C": "#8e24aa", "D": "#fb8c00"}
 
 
 class HistoriqueDialog(tk.Toplevel):
